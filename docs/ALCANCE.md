@@ -102,7 +102,33 @@ El acceso a perfiles es mediante un **selector de rol simple siempre visible** (
 4. Ningún dato personal real en el mock.
 5. (Deseable, no exigible: usable en móvil.)
 
-## 8. Preguntas sin respuesta
+## 8. Estado de construcción (29 de julio de 2026)
+
+**La maqueta está construida y verificada.** Todo lo listado como *crítico* e
+*importante* está implementado, más los tres *deseables*.
+
+| Verificación | Resultado |
+|---|---|
+| Flujo del afiliado de punta a punta | 28 comprobaciones automatizadas en el navegador, sin errores |
+| Las 15 vistas de los 5 perfiles | Todas cargan pobladas, sin errores de consola |
+| Build de producción con base `/coipo_cabania/` | Mismas verificaciones, mismo resultado |
+| Móvil (375 px) | 10 vistas sin desplazamiento horizontal |
+
+Scripts de verificación reutilizables en `frontend/qa/` (requieren el servidor
+corriendo): `flujo-afiliado.mjs`, `todos-los-perfiles.mjs`, `revision-movil.mjs`.
+
+Añadido sobre el alcance original: 12 inmuebles con ficha completa (en vez de 5),
+lista de espera ordenada por prelación, aviso de cierre por postulación estival, y
+guarda de perfil al entrar por enlace directo a una sección ajena.
+
+**Pendiente para publicar:** GitHub Pages debe habilitarse una vez a mano en
+*Settings → Pages → Source = «GitHub Actions»*. El workflow ya construye y pasa el
+lint correctamente; solo falla ese paso. Tras habilitarlo, basta re-ejecutar el
+workflow para que el sitio quede en https://sud-austral.github.io/coipo_cabania/
+
+El recorrido sugerido para la reunión está en `docs/GUION_DEMO.md`.
+
+## 9. Preguntas sin respuesta
 
 1. **Fecha exacta de la reunión** → se asumió "en ~1 semana desde el 28-07-2026" y entrega
    con 1 día de margen. Confirmar día.
