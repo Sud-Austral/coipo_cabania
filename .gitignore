@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Herramientas locales, ajenas al proyecto (CLI de Claude Code instalado en la raíz)
+/package.json
+/package-lock.json
+.claude/settings.local.json
+.claude/*.lock
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

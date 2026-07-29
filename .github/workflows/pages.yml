@@ -1,0 +1,64 @@
+# Publica la maqueta (solo frontend) en GitHub Pages.
+#
+# Esto es exclusivo de la FASE DE MAQUETA: al construirse el backend FastAPI
+# (fase 2), el despliegue pasa al pipeline institucional
+# (.github/workflows/deploy-prod.yml, que reutiliza Sud-Austral/infra-docker-base)
+# y este archivo se elimina o se limita a una rama de demostración.
+#
+# Requisito manual, una sola vez: Settings → Pages → Source = "GitHub Actions".
+
+name: Publicar maqueta en Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+  desplegar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - id: despliegue
+        uses: actions/deploy-pages@v4

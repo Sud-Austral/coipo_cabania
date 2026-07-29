@@ -1,122 +1,52 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { AppLayout } from './components/layout/AppLayout.jsx'
+import { Catalogo } from './pages/publico/Catalogo.jsx'
+import { FichaInmueble } from './pages/publico/FichaInmueble.jsx'
+import { Reservar } from './pages/publico/Reservar.jsx'
+import { Comprobante } from './pages/publico/Comprobante.jsx'
+import { MisReservas } from './pages/publico/MisReservas.jsx'
+import { PanelRegional } from './pages/regional/PanelRegional.jsx'
+import { CalendarioOperativo } from './pages/regional/CalendarioOperativo.jsx'
+import { ReservasPais } from './pages/central/ReservasPais.jsx'
+import { NominaDescuentos } from './pages/central/NominaDescuentos.jsx'
+import { Reportes } from './pages/central/Reportes.jsx'
+import { Sanciones } from './pages/central/Sanciones.jsx'
+import { InmueblesAdmin } from './pages/admin/InmueblesAdmin.jsx'
+import { Temporadas } from './pages/admin/Temporadas.jsx'
+import { CargaNomina } from './pages/admin/CargaNomina.jsx'
+import { Auditoria } from './pages/admin/Auditoria.jsx'
 
-function App() {
-  const [count, setCount] = useState(0)
-
+export default function App() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <Routes>
+      <Route element={<AppLayout />}>
+        <Route index element={<Navigate to="/catalogo" replace />} />
 
-      <div className="ticks"></div>
+        {/* Portal de reservas: afiliados y usuarios no afiliados */}
+        <Route path="catalogo" element={<Catalogo />} />
+        <Route path="inmuebles/:id" element={<FichaInmueble />} />
+        <Route path="inmuebles/:id/reservar" element={<Reservar />} />
+        <Route path="reservas/:codigo" element={<Comprobante />} />
+        <Route path="mis-reservas" element={<MisReservas />} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        {/* Encargada regional */}
+        <Route path="regional" element={<PanelRegional />} />
+        <Route path="regional/calendario" element={<CalendarioOperativo />} />
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+        {/* Oficina Central */}
+        <Route path="central" element={<ReservasPais />} />
+        <Route path="central/descuentos" element={<NominaDescuentos />} />
+        <Route path="central/dashboard" element={<Reportes />} />
+        <Route path="central/sanciones" element={<Sanciones />} />
+
+        {/* Administrador */}
+        <Route path="admin/inmuebles" element={<InmueblesAdmin />} />
+        <Route path="admin/temporadas" element={<Temporadas />} />
+        <Route path="admin/nomina" element={<CargaNomina />} />
+        <Route path="admin/auditoria" element={<Auditoria />} />
+
+        <Route path="*" element={<Navigate to="/catalogo" replace />} />
+      </Route>
+    </Routes>
   )
 }
-
-export default App
