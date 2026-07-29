@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/layout/AppLayout.jsx'
+import { RequiereRol } from './components/layout/RequiereRol.jsx'
 import { Catalogo } from './pages/publico/Catalogo.jsx'
 import { FichaInmueble } from './pages/publico/FichaInmueble.jsx'
 import { Reservar } from './pages/publico/Reservar.jsx'
@@ -16,34 +17,122 @@ import { Temporadas } from './pages/admin/Temporadas.jsx'
 import { CargaNomina } from './pages/admin/CargaNomina.jsx'
 import { Auditoria } from './pages/admin/Auditoria.jsx'
 
+const PORTAL = ['afiliado', 'no_afiliado']
+
 export default function App() {
   return (
     <Routes>
       <Route element={<AppLayout />}>
         <Route index element={<Navigate to="/catalogo" replace />} />
 
-        {/* Portal de reservas: afiliados y usuarios no afiliados */}
+        {/* Portal de reservas: afiliados y usuarios no afiliados.
+            El catálogo y la ficha quedan abiertos a todos los perfiles: la
+            encargada o el administrador también necesitan consultarlos. */}
         <Route path="catalogo" element={<Catalogo />} />
         <Route path="inmuebles/:id" element={<FichaInmueble />} />
-        <Route path="inmuebles/:id/reservar" element={<Reservar />} />
         <Route path="reservas/:codigo" element={<Comprobante />} />
-        <Route path="mis-reservas" element={<MisReservas />} />
+        <Route
+          path="inmuebles/:id/reservar"
+          element={
+            <RequiereRol roles={PORTAL}>
+              <Reservar />
+            </RequiereRol>
+          }
+        />
+        <Route
+          path="mis-reservas"
+          element={
+            <RequiereRol roles={PORTAL}>
+              <MisReservas />
+            </RequiereRol>
+          }
+        />
 
         {/* Encargada regional */}
-        <Route path="regional" element={<PanelRegional />} />
-        <Route path="regional/calendario" element={<CalendarioOperativo />} />
+        <Route
+          path="regional"
+          element={
+            <RequiereRol roles={['regional']}>
+              <PanelRegional />
+            </RequiereRol>
+          }
+        />
+        <Route
+          path="regional/calendario"
+          element={
+            <RequiereRol roles={['regional']}>
+              <CalendarioOperativo />
+            </RequiereRol>
+          }
+        />
 
         {/* Oficina Central */}
-        <Route path="central" element={<ReservasPais />} />
-        <Route path="central/descuentos" element={<NominaDescuentos />} />
-        <Route path="central/dashboard" element={<Reportes />} />
-        <Route path="central/sanciones" element={<Sanciones />} />
+        <Route
+          path="central"
+          element={
+            <RequiereRol roles={['central']}>
+              <ReservasPais />
+            </RequiereRol>
+          }
+        />
+        <Route
+          path="central/descuentos"
+          element={
+            <RequiereRol roles={['central']}>
+              <NominaDescuentos />
+            </RequiereRol>
+          }
+        />
+        <Route
+          path="central/dashboard"
+          element={
+            <RequiereRol roles={['central']}>
+              <Reportes />
+            </RequiereRol>
+          }
+        />
+        <Route
+          path="central/sanciones"
+          element={
+            <RequiereRol roles={['central']}>
+              <Sanciones />
+            </RequiereRol>
+          }
+        />
 
         {/* Administrador */}
-        <Route path="admin/inmuebles" element={<InmueblesAdmin />} />
-        <Route path="admin/temporadas" element={<Temporadas />} />
-        <Route path="admin/nomina" element={<CargaNomina />} />
-        <Route path="admin/auditoria" element={<Auditoria />} />
+        <Route
+          path="admin/inmuebles"
+          element={
+            <RequiereRol roles={['admin']}>
+              <InmueblesAdmin />
+            </RequiereRol>
+          }
+        />
+        <Route
+          path="admin/temporadas"
+          element={
+            <RequiereRol roles={['admin']}>
+              <Temporadas />
+            </RequiereRol>
+          }
+        />
+        <Route
+          path="admin/nomina"
+          element={
+            <RequiereRol roles={['admin']}>
+              <CargaNomina />
+            </RequiereRol>
+          }
+        />
+        <Route
+          path="admin/auditoria"
+          element={
+            <RequiereRol roles={['admin']}>
+              <Auditoria />
+            </RequiereRol>
+          }
+        />
 
         <Route path="*" element={<Navigate to="/catalogo" replace />} />
       </Route>
