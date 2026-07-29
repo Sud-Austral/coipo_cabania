@@ -148,7 +148,7 @@ export function FichaInmueble() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+        <div className="min-w-0 space-y-6 lg:col-span-2">
           <GaleriaFotos inmueble={inmueble} />
 
           <Tarjeta className="p-5">
@@ -221,7 +221,7 @@ export function FichaInmueble() {
           </Tarjeta>
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Tarjeta className="p-5">
             <h2 className="flex items-center gap-2 text-lg font-semibold text-verde-900">
               <CalendarDays size={18} className="text-verde-600" aria-hidden="true" />

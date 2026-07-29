@@ -23,7 +23,7 @@ export function GaleriaFotos({ inmueble }) {
       </div>
 
       {fotos.length > 1 && (
-        <div className="flex gap-2 p-2.5">
+        <div className="flex gap-2 overflow-x-auto p-2.5">
           {fotos.map((foto, i) => (
             <button
               key={foto.nombre}

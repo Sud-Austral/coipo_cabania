@@ -76,10 +76,14 @@ body {
   color: #92400e;
 }
 
-/* Leaflet dentro de tarjetas redondeadas */
+/* Leaflet dentro de tarjetas redondeadas.
+   `contain` evita que las teselas, posicionadas con transform, provoquen
+   desplazamiento horizontal de la página en pantallas angostas. */
 .leaflet-container {
   border-radius: 0.75rem;
   z-index: 0;
+  max-width: 100%;
+  contain: paint;
 }
 
 @media print {

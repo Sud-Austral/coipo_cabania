@@ -83,6 +83,48 @@ const MAPA = {
   'puntaarenas-4': intCocina,
   'puntaarenas-5': entPaine,
 
+  // ---- Fichas completas: La Serena (veraneo, costa de Coquimbo) ----
+  'laserena-1': extCostaDepto,
+  'laserena-2': intLiving6,
+  'laserena-3': intDorm1,
+  'laserena-4': entPlaya,
+
+  // ---- Fichas completas: Pichilemu (veraneo, costa de O'Higgins) ----
+  'pichilemu-1': extRural,
+  'pichilemu-2': intLiving2,
+  'pichilemu-3': intDorm2,
+  'pichilemu-4': entPlaya,
+
+  // ---- Fichas completas: Vilches (huéspedes, precordillera del Maule) ----
+  'vilches-1': extLagoMontana,
+  'vilches-2': intLiving5,
+  'vilches-3': intDorm4,
+  'vilches-4': entMontana,
+
+  // ---- Fichas completas: Concepción (huéspedes, urbano) ----
+  'concepcion-1': extUrbano,
+  'concepcion-2': intLiving1,
+  'concepcion-3': intDorm1,
+  'concepcion-4': intCocina,
+
+  // ---- Fichas completas: P.N. Conguillío (veraneo, montaña) ----
+  'conguillio-1': extNieve,
+  'conguillio-2': intLiving4,
+  'conguillio-3': intDorm2,
+  'conguillio-4': entMontana,
+
+  // ---- Fichas completas: Valdivia (huéspedes, urbano fluvial) ----
+  'valdivia-1': extPatrimonial,
+  'valdivia-2': intLiving7,
+  'valdivia-3': intDorm3,
+  'valdivia-4': entBosque,
+
+  // ---- Fichas completas: Coyhaique (huéspedes, austral) ----
+  'coyhaique-1': extSuburbano,
+  'coyhaique-2': intLiving3,
+  'coyhaique-3': intDorm4,
+  'coyhaique-4': entPatagonia,
+
   // ---- Resto de la red, por zona ----
   'norte-1': extNorte, // Toconao (adobe blanqueado, altiplano)
   'costa-1': extUrbano2, // Bahía Inglesa 2

@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Search, SlidersHorizontal, X } from 'lucide-react'
+import { CalendarClock, Search, SlidersHorizontal, X } from 'lucide-react'
 import { getInmuebles } from '../../api/inmuebles.js'
 import { REGIONES, TIPOS_INMUEBLE } from '../../fixtures/inmuebles.js'
 import { useRol } from '../../context/RolContext.jsx'
 import { InmuebleCard } from '../../components/inmuebles/InmuebleCard.jsx'
 import {
+  Aviso,
   Boton,
-  Cargando,
   Campo,
+  Cargando,
   EstadoVacio,
   Tarjeta,
   TituloSeccion,
@@ -46,6 +47,16 @@ export function Catalogo() {
         titulo="Catálogo de inmuebles"
         descripcion="Red de 34 casas de huéspedes y de veraneo del Servicio de Bienestar, entre las regiones de Antofagasta y Magallanes. Revise la ficha de cada inmueble para ver fotografías, ubicación, equipamiento y disponibilidad."
       />
+
+      {/* Bloqueo de temporada vigente: se informa antes de que el usuario
+          descubra que el calendario está cerrado (solicitud §5.4 req. 24). */}
+      <div className="mb-5">
+        <Aviso tono="ambar" icono={CalendarClock} titulo="Postulación estival 2026-2027">
+          Entre el <strong>3 y el 28 de noviembre</strong> las reservas de temporada estival
+          estarán cerradas en toda la red mientras se realiza el proceso de postulación y
+          sorteo. Durante ese período el calendario mostrará esas fechas como no disponibles.
+        </Aviso>
+      </div>
 
       <Tarjeta className="mb-6 p-4">
         <div className="flex items-center gap-2 pb-3 text-sm font-medium text-slate-700">

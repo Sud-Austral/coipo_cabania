@@ -15,6 +15,7 @@ import { nombreRegion } from '../../fixtures/inmuebles.js'
 import { fechaCorta, pesos } from '../../lib/formato.js'
 import { useRol } from '../../context/RolContext.jsx'
 import { FiltroEstados, TablaReservas } from '../../components/reservas/TablaReservas.jsx'
+import { ListaEspera } from '../../components/reservas/ListaEspera.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { Badge } from '../../components/ui/Badge.jsx'
 import {
@@ -61,6 +62,11 @@ export function PanelRegional() {
     [reservas],
   )
 
+  const enEspera = useMemo(
+    () => reservas.filter((r) => r.estado === 'lista_espera'),
+    [reservas],
+  )
+
   const visibles = useMemo(
     () => (filtro === 'todos' ? reservas : reservas.filter((r) => r.estado === filtro)),
     [reservas, filtro],
@@ -72,6 +78,8 @@ export function PanelRegional() {
     enCurso: reservas.filter((r) => r.estado === 'en_curso').length,
     listaEspera: reservas.filter((r) => r.estado === 'lista_espera').length,
   }
+
+  const promover = (reserva) => abrir(reserva, 'confirmar')
 
   const abrir = (reserva, accion) => {
     setGestion({ reserva, accion })
@@ -244,6 +252,12 @@ export function PanelRegional() {
             })}
           </ul>
         </Tarjeta>
+      )}
+
+      {enEspera.length > 0 && (
+        <div className="mb-6">
+          <ListaEspera reservas={enEspera} onPromover={promover} />
+        </div>
       )}
 
       {/* Todas las reservas de la región */}
