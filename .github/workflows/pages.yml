@@ -47,12 +47,10 @@ jobs:
 
       - run: npm run build
 
-      # `enablement: true` intenta activar Pages por API. Si la organización no
-      # lo permite, hay que activarlo una vez a mano:
-      # Settings → Pages → Source = "GitHub Actions".
+      # Requiere que Pages esté configurado con Source = "GitHub Actions"
+      # (Settings → Pages). Con Source = "Deploy from a branch", GitHub sirve el
+      # repositorio con Jekyll y este paso falla.
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
