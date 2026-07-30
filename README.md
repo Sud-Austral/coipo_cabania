@@ -1,3 +1,3 @@
 # coipo_cabania
-go
+go2
 
