@@ -1,6 +1,6 @@
 import puppeteer from 'puppeteer-core'
-const BASE='http://localhost:5199/coipo_cabania/'
-const CAPS='C:/Users/LUIS~1.MON/AppData/Local/Temp/caps-movil'
+const BASE=process.env.BASE ?? 'http://localhost:5199/coipo_cabania/'
+const CAPS=process.env.CAPS ?? 'C:/Users/LUIS~1.MON/AppData/Local/Temp/caps-movil'
 const nav = await puppeteer.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,defaultViewport:{width:375,height:812,isMobile:true,hasTouch:true},args:['--hide-scrollbars']})
 const p = await nav.newPage()
 await p.goto(BASE,{waitUntil:'networkidle2'})
@@ -12,12 +12,16 @@ const ver = async (rol, ruta, nombre) => {
   const m = await p.evaluate(()=>({
     scrollW: document.documentElement.scrollWidth,
     clientW: document.documentElement.clientWidth,
-    // Elementos que se salen del ancho de la pantalla
+    // Elementos que se salen del ancho de la pantalla.
+    // .banner-institucional se excluye: por debajo de 1165 px la imagen
+    // desborda A PROPÓSITO (piso de altura, §3 del insumo gráfico) y el
+    // contenedor la recorta con overflow:hidden. Sin esta exclusión el <img>
+    // saldría listado en las diez rutas y taparía los desbordes reales.
     desbordan: [...document.querySelectorAll('body *')].filter(e=>{
       const r=e.getBoundingClientRect()
       return r.width>0 && r.right > window.innerWidth + 2 &&
              getComputedStyle(e).overflowX!=='auto' && getComputedStyle(e).overflowX!=='scroll' &&
-             !e.closest('[class*="overflow-x-auto"]')
+             !e.closest('[class*="overflow-x-auto"], .banner-institucional')
     }).slice(0,4).map(e=>`${e.tagName}.${(e.className||'').toString().slice(0,45)}`)
   }))
   await p.screenshot({path:`${CAPS}/${nombre}.png`,fullPage:true})

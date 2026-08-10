@@ -20,6 +20,12 @@
   --color-arena-100: #f2ede3;
   --color-arena-200: #e4dac6;
 
+  /* Fondo del banner institucional. Medido sobre el asset, no elegido.
+     CONVIVE con la paleta verde-*, no la reemplaza: se usa solo donde el
+     banner toca la maqueta. Nombrado por función a propósito — si alguien
+     lo propaga a botones o gráficos está revirtiendo esa decisión. */
+  --color-banner: #064928;
+
   --font-sans:
     'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
     sans-serif;
@@ -32,6 +38,53 @@ html {
 body {
   @apply bg-arena-50 text-slate-800 antialiased;
   font-family: var(--font-sans);
+}
+
+/* --- Cabecera institucional CONAF · UIA ------------------------------------
+   Opción A con piso de altura (§3 de INSUMO_GRAFICO/implementacion_banner.md).
+   El banner conserva su proporción natural, así que NUNCA se recorta en
+   vertical y el filete superior sobrevive en todos los anchos. Por debajo de
+   68 × 17,1299 = 1164,84 px de viewport la imagen deja de encoger, desborda
+   por la derecha y el contenedor la recorta: la marca queda anclada a la
+   izquierda con altura constante, sin media query.
+
+   Va como hijo directo de <header>, NO dentro del contenedor max-w-7xl: si
+   entrara ahí el ancho de cruce se desplazaría a 1196,84 px y por encima de
+   1312 px el banner dejaría de crecer, quedando como una isla de 1248 px.
+
+   La app NO es un app shell: usa scroll de documento (min-h-dvh) y nada es
+   sticky, así que el banner se va al hacer scroll. No hace falta la receta
+   .app-frame/.app-shell del §7.1 — no la reintroduzcas.
+
+   Si cambia el asset: volver a medirlo (§1) y actualizar estos dos números y
+   las constantes de frontend/qa/banner-institucional.mjs. */
+:root {
+  --banner-razon: 17.1299; /* 3032 / 177 */
+  --banner-alto-minimo: 68px; /* medido: a 390 px de ancho la marca aún se lee */
+}
+
+.banner-institucional {
+  background: var(--color-banner);
+  overflow: hidden;
+  line-height: 0;
+}
+
+.banner-institucional img {
+  display: block;
+  width: max(100%, calc(var(--banner-alto-minimo) * var(--banner-razon)));
+  height: auto;
+  /* La razón, declarada también en CSS y no solo por los atributos width/height
+     del <img>: los atributos reservan la caja mientras decodifica (CLS cero),
+     pero Chrome los descarta si la imagen FALLA, y la banda colapsa a la caja
+     del texto alternativo — medido: 16 px en vez de 80 a 1366. Con aspect-ratio
+     en CSS la banda se mantiene entera pase lo que pase con la petición. */
+  aspect-ratio: var(--banner-razon);
+  /* Imprescindible con Tailwind: su preflight declara `img { max-width: 100% }`,
+     que no gana al `width` de arriba pero SÍ recorta el ancho usado — el piso
+     quedaba anulado en silencio y el banner encogía hasta 23 px de alto a 390.
+     El valor calculado era correcto; lo que fallaba era el ancho usado, así que
+     no se ve en `width` sino midiendo la caja. */
+  max-width: none;
 }
 
 /* Foco visible y consistente en todo el sitio (accesibilidad) */
