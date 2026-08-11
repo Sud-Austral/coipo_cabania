@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { differenceInCalendarDays, parseISO } from 'date-fns'
-import { CalendarPlus, CircleSlash } from 'lucide-react'
+import { CalendarPlus, CircleSlash, Star } from 'lucide-react'
 import { anularReserva, getReservas } from '../../api/reservas.js'
+import { crearValoracion } from '../../api/valoraciones.js'
 import { contarNoches, cobroPorDesistimiento } from '../../lib/tarifas.js'
 import { fechaCorta, pesos } from '../../lib/formato.js'
 import { POLITICA_DESISTIMIENTO } from '../../fixtures/tarifas.js'
@@ -11,13 +12,16 @@ import {
   FiltroEstados,
   TablaReservas,
 } from '../../components/reservas/TablaReservas.jsx'
+import { Estrellas, SelectorEstrellas } from '../../components/inmuebles/Estrellas.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import {
   Aviso,
   Boton,
+  Campo,
   Cargando,
   Tarjeta,
   TituloSeccion,
+  clasesInput,
 } from '../../components/ui/Elementos.jsx'
 
 const ANULABLES = ['recibida', 'confirmada', 'lista_espera']
@@ -29,6 +33,11 @@ export function MisReservas() {
   const [filtro, setFiltro] = useState('todos')
   const [porAnular, setPorAnular] = useState(null)
   const [anulando, setAnulando] = useState(false)
+  const [porValorar, setPorValorar] = useState(null)
+  const [estrellas, setEstrellas] = useState(0)
+  const [comentario, setComentario] = useState('')
+  const [guardando, setGuardando] = useState(false)
+  const [errorValoracion, setErrorValoracion] = useState(null)
 
   const cargar = useCallback(() => {
     setCargando(true)
@@ -62,6 +71,35 @@ export function MisReservas() {
       }),
     }
   }, [porAnular])
+
+  const abrirValoracion = (reserva) => {
+    setPorValorar(reserva)
+    setEstrellas(0)
+    setComentario('')
+    setErrorValoracion(null)
+  }
+
+  const enviarValoracion = async () => {
+    setGuardando(true)
+    setErrorValoracion(null)
+    try {
+      await crearValoracion(
+        {
+          inmueble_id: porValorar.inmueble_id,
+          reserva_codigo: porValorar.codigo,
+          estrellas,
+          comentario,
+        },
+        actor,
+      )
+      setPorValorar(null)
+      cargar()
+    } catch (e) {
+      setErrorValoracion(e.detail ?? 'No fue posible registrar la valoración.')
+    } finally {
+      setGuardando(false)
+    }
+  }
 
   const confirmarAnulacion = async () => {
     setAnulando(true)
@@ -120,14 +158,27 @@ export function MisReservas() {
         reservas={visibles}
         mostrar={{ titular: false, region: true, monto: true }}
         vacio="Todavía no registra reservas con ese estado. Explore el catálogo para generar una solicitud."
-        acciones={(r) =>
-          ANULABLES.includes(r.estado) ? (
-            <Boton variante="peligro" onClick={() => setPorAnular(r)}>
-              <CircleSlash size={14} aria-hidden="true" />
-              Desistir
-            </Boton>
-          ) : null
-        }
+        acciones={(r) => {
+          if (ANULABLES.includes(r.estado)) {
+            return (
+              <Boton variante="peligro" onClick={() => setPorAnular(r)}>
+                <CircleSlash size={14} aria-hidden="true" />
+                Desistir
+              </Boton>
+            )
+          }
+          if (r.estado === 'finalizada') {
+            return r.valoracion ? (
+              <Estrellas valor={r.valoracion.estrellas} tamano={13} />
+            ) : (
+              <Boton variante="secundario" onClick={() => abrirValoracion(r)}>
+                <Star size={14} aria-hidden="true" />
+                Valorar
+              </Boton>
+            )
+          }
+          return null
+        }}
       />
 
       <Modal
@@ -177,6 +228,52 @@ export function MisReservas() {
             </p>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        abierto={Boolean(porValorar)}
+        onCerrar={() => setPorValorar(null)}
+        focusInicial={false}
+        titulo="Valorar la estadía"
+        descripcion={porValorar ? `${porValorar.codigo} · ${porValorar.inmueble?.nombre}` : ''}
+        pie={
+          <>
+            <Boton variante="neutro" onClick={() => setPorValorar(null)}>
+              Cancelar
+            </Boton>
+            <Boton
+              cargando={guardando}
+              disabled={estrellas === 0}
+              onClick={enviarValoracion}
+            >
+              Enviar valoración
+            </Boton>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Campo etiqueta="¿Cómo estuvo la estadía?" requerido>
+            <SelectorEstrellas
+              valor={estrellas}
+              onCambiar={setEstrellas}
+            />
+          </Campo>
+
+          <Campo etiqueta="Comentario (opcional)" ayuda="Máximo 150 caracteres.">
+            <textarea
+              value={comentario}
+              onChange={(e) => setComentario(e.target.value)}
+              maxLength={150}
+              rows={3}
+              placeholder="Qué destacaría del inmueble o qué habría que mejorar."
+              className={clasesInput}
+            />
+          </Campo>          
+          {errorValoracion && <Aviso tono="rojo">{errorValoracion}</Aviso>}
+          <p className="text-xs text-slate-500">
+            Su valoración queda visible en la ficha del inmueble junto a su nombre.
+          </p>
+        </div>
       </Modal>
     </>
   )

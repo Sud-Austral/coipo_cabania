@@ -17,6 +17,7 @@ import {
   auditoriaSeed,
   ultimaCargaNomina,
 } from '../fixtures/gestion.seed.js'
+import { valoracionesSeed } from '../fixtures/valoraciones.seed.js'
 
 const CLAVE = 'coipo_demo_v1'
 
@@ -30,6 +31,7 @@ function semillas() {
     nominas: nominasSeed,
     auditoria: auditoriaSeed,
     carga_nomina: ultimaCargaNomina,
+    valoraciones: valoracionesSeed,
   }
 }
 
@@ -42,7 +44,7 @@ function clonar(valor) {
 function cargar() {
   try {
     const guardado = localStorage.getItem(CLAVE)
-    if (guardado) return JSON.parse(guardado)
+    if (guardado) return { ...clonar(semillas()), ...JSON.parse(guardado) }
   } catch {
     // localStorage no disponible o dato corrupto: se usan las semillas.
   }
