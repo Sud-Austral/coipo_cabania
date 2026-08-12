@@ -8,6 +8,7 @@ datos son ficticios y el estado de la demostración vive en el `localStorage` de
 (`frontend/src/api/store.js`). El backend FastAPI + PostgreSQL es la fase 2; `backend/` y `db/`
 están vacíos a la espera de eso.
 
+
 El alcance y las decisiones de esta fase están en [docs/ALCANCE.md](docs/ALCANCE.md); los
 requisitos originales, en [INSUMO/](INSUMO/); la guía para incorporarse al proyecto, en
 [docs/GUIA_INDUCCION.md](docs/GUIA_INDUCCION.md).
