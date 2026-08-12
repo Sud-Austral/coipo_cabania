@@ -2,7 +2,15 @@ import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 
 /** Ventana modal con cierre por Escape, clic en el velo y foco inicial. */
-export function Modal({ abierto, onCerrar, titulo, descripcion, children, pie }) {
+export function Modal({
+  abierto,
+  onCerrar,
+  titulo,
+  descripcion,
+  children,
+  pie,
+  focusInicial = true,
+}) {
   const contenedor = useRef(null)
 
   useEffect(() => {
@@ -11,9 +19,11 @@ export function Modal({ abierto, onCerrar, titulo, descripcion, children, pie })
       if (e.key === 'Escape') onCerrar()
     }
     document.addEventListener('keydown', alPresionar)
-    contenedor.current?.focus()
+    if (focusInicial) {
+      contenedor.current?.focus()
+    }
     return () => document.removeEventListener('keydown', alPresionar)
-  }, [abierto, onCerrar])
+  }, [abierto, onCerrar, focusInicial])
 
   if (!abierto) return null
 

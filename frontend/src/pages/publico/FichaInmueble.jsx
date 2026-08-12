@@ -10,14 +10,16 @@ import {
   Users,
 } from 'lucide-react'
 import { getInmueble } from '../../api/inmuebles.js'
+import { getValoraciones } from '../../api/valoraciones.js'
 import { etiquetaTipo, nombreRegion } from '../../fixtures/inmuebles.js'
 import { tarifas } from '../../fixtures/tarifas.js'
-import { pesos } from '../../lib/formato.js'
+import { fechaCorta, pesos } from '../../lib/formato.js'
 import { useRol } from '../../context/RolContext.jsx'
 import { GaleriaFotos } from '../../components/inmuebles/GaleriaFotos.jsx'
 import { MapaInmueble } from '../../components/inmuebles/MapaInmueble.jsx'
 import { ZonasInteres } from '../../components/inmuebles/ZonasInteres.jsx'
 import { CalendarioDisponibilidad } from '../../components/inmuebles/CalendarioDisponibilidad.jsx'
+import { Estrellas } from '../../components/inmuebles/Estrellas.jsx'
 import { Badge } from '../../components/ui/Badge.jsx'
 import { Aviso, Boton, Cargando, Tarjeta } from '../../components/ui/Elementos.jsx'
 
@@ -83,6 +85,46 @@ function TarifasReferencia({ inmueble, esExterno }) {
   )
 }
 
+/** Comentarios de quienes ya se alojaron en el inmueble. */
+function Valoraciones({ inmuebleId }) {
+  const [datos, setDatos] = useState(null)
+
+  useEffect(() => {
+    let vigente = true
+    getValoraciones(inmuebleId).then((r) => vigente && setDatos(r))
+    return () => {
+      vigente = false
+    }
+  }, [inmuebleId])
+
+  if (!datos) return <p className="text-sm text-slate-500">Cargando valoraciones…</p>
+  if (datos.total === 0) {
+    return (
+      <p className="text-sm text-slate-500">
+        Este inmueble todavía no tiene valoraciones. Se publican cuando las estadías finalizan.
+      </p>
+    )
+  }
+
+  return (
+    <div>
+      <Estrellas valor={datos.resumen.promedio} total={datos.resumen.total} tamano={18} />
+      <ul className="mt-3 divide-y divide-arena-200">
+        {datos.items.map((v) => (
+          <li key={v.id} className="py-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-sm font-medium text-slate-800">{v.autor}</span>
+              <span className="tabular text-xs text-slate-500">{fechaCorta(v.fecha)}</span>
+            </div>
+            <Estrellas valor={v.estrellas} tamano={13} className="mt-1" />
+            {v.comentario && <p className="mt-1.5 text-sm text-slate-600">{v.comentario}</p>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 export function FichaInmueble() {
   const { id } = useParams()
   const navegar = useNavigate()
@@ -133,6 +175,15 @@ export function FichaInmueble() {
             {inmueble.vitrina && <Badge tono="arena">Ficha completa</Badge>}
           </div>
           <h1 className="mt-2 text-2xl font-semibold text-verde-900">{inmueble.nombre}</h1>
+          {inmueble.valoracion?.total > 0 && (
+            <p className="mt-1">
+              <Estrellas
+                valor={inmueble.valoracion.promedio}
+                total={inmueble.valoracion.total}
+                tamano={16}
+              />
+            </p>
+          )}
           <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-600">
             <MapPin size={15} className="text-slate-400" aria-hidden="true" />
             {inmueble.direccion} · {nombreRegion(inmueble.region)}
@@ -209,6 +260,14 @@ export function FichaInmueble() {
               </li>
               <li>Los daños o destrozos son de cargo del titular de la reserva.</li>
             </ul>
+          </Tarjeta>
+
+          <Tarjeta className="p-5">
+            <h2 className="text-lg font-semibold text-verde-900">Valoraciones de huéspedes</h2>
+            <p className="mt-1 mb-3 text-sm text-slate-600">
+              Opiniones de funcionarios y funcionarias que ya se alojaron en este inmueble.
+            </p>
+            <Valoraciones inmuebleId={inmueble.id} />
           </Tarjeta>
 
           <Tarjeta className="p-5">

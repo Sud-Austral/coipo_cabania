@@ -4,6 +4,7 @@ import { nombreRegion, etiquetaTipo } from '../../fixtures/inmuebles.js'
 import { tarifas } from '../../fixtures/tarifas.js'
 import { pesos } from '../../lib/formato.js'
 import { Badge } from '../ui/Badge.jsx'
+import { Estrellas } from './Estrellas.jsx'
 import { rutaFoto } from './fotos.js'
 
 /** Tarifa mínima de referencia, para orientar antes de entrar a la ficha. */
@@ -43,6 +44,15 @@ export function InmuebleCard({ inmueble, esExterno = false }) {
         <h3 className="text-base leading-snug font-semibold text-verde-900 group-hover:underline">
           {inmueble.nombre}
         </h3>
+        {inmueble.valoracion?.total > 0 && (
+          <p className="mt-1.5">
+            <Estrellas
+              valor={inmueble.valoracion.promedio}
+              total={inmueble.valoracion.total}
+              tamano={14}
+            />
+          </p>
+        )}
 
         <p className="mt-1.5 flex items-center gap-1.5 text-sm text-slate-600">
           <MapPin size={14} className="shrink-0 text-slate-400" aria-hidden="true" />

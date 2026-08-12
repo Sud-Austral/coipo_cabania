@@ -6,8 +6,15 @@
 import { eachDayOfInterval, parseISO, isWithinInterval, subDays } from 'date-fns'
 import { responder, fallar, lista } from './client.js'
 import { store, persistir, siguienteId, registrarAuditoria } from './store.js'
+import { resumenValoracion } from './valoraciones.js'
 import { ESTADOS_QUE_OCUPAN } from '../lib/estados.js'
 import { aISO } from '../lib/formato.js'
+
+/** Adjunta el promedio de valoraciones, igual que el backend lo devolvería. */
+const conValoracion = (inmueble) => ({
+  ...inmueble,
+  valoracion: resumenValoracion(inmueble.id),
+})
 
 /** GET /api/inmuebles?region=&tipo=&capacidad_min=&busqueda= */
 export function getInmuebles(filtros = {}) {
@@ -28,14 +35,14 @@ export function getInmuebles(filtros = {}) {
     )
   }
 
-  return responder(lista(items))
+  return responder(lista(items.map(conValoracion)))
 }
 
 /** GET /api/inmuebles/{id} */
 export function getInmueble(id) {
   const inmueble = store.inmuebles.find((i) => i.id === Number(id))
   if (!inmueble) return fallar(404, 'Inmueble no encontrado')
-  return responder(inmueble)
+  return responder(conValoracion(inmueble))
 }
 
 /**

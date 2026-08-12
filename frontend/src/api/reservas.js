@@ -7,6 +7,7 @@ import { differenceInCalendarDays, parseISO } from 'date-fns'
 import { responder, fallar, lista } from './client.js'
 import { store, persistir, siguienteId, registrarAuditoria } from './store.js'
 import { rangoDisponible } from './inmuebles.js'
+import { valoracionDeReserva } from './valoraciones.js'
 import { calcularTarifa, cobroPorDesistimiento, contarNoches } from '../lib/tarifas.js'
 
 const ahoraISO = () => new Date().toISOString().slice(0, 19)
@@ -28,10 +29,12 @@ export function getReservas(filtros = {}) {
   // Más recientes primero, por fecha de entrada.
   items.sort((a, b) => (a.fecha_entrada < b.fecha_entrada ? 1 : -1))
 
-  // Se adjunta el inmueble para no obligar a la interfaz a cruzar datos.
+  // Se adjunta el inmueble y la valoración para no obligar a la interfaz a
+  // cruzar datos.
   const conInmueble = items.map((r) => ({
     ...r,
     inmueble: store.inmuebles.find((i) => i.id === r.inmueble_id) ?? null,
+    valoracion: valoracionDeReserva(r.codigo),
   }))
 
   return responder(lista(conInmueble))

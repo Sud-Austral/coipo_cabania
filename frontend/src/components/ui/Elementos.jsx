@@ -76,7 +76,7 @@ export function Campo({ etiqueta, ayuda, error, requerido, children, className =
 }
 
 export const clasesInput =
-  'w-full min-h-11 rounded-lg border border-arena-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-verde-500'
+  'w-full min-h-11 box-border rounded-lg border border-arena-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-verde-500'
 
 export function EstadoVacio({ titulo, descripcion, accion, icono: Icono = Inbox }) {
   return (
