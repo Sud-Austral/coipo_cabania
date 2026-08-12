@@ -12,7 +12,6 @@ import {
   RotateCcw,
   ScrollText,
   ShieldAlert,
-  Trees,
   Upload,
   UserRound,
 } from 'lucide-react'
@@ -21,6 +20,7 @@ import { useRol } from '../../context/RolContext.jsx'
 import { reiniciarDemo } from '../../api/store.js'
 import { Modal } from '../ui/Modal.jsx'
 import { Boton } from '../ui/Elementos.jsx'
+import { BannerInstitucional } from './BannerInstitucional.jsx'
 
 /** Navegación de cada perfil. Un perfil solo ve sus propias secciones. */
 const NAV_POR_ROL = {
@@ -72,32 +72,36 @@ export function AppLayout() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="bg-verde-700 text-white">
+      {/* Cabecera despintada a propósito. El banner institucional es la única
+          banda verde de la pantalla: apilar bajo él la barra verde-700 dejaba
+          dos verdes casi iguales (distancia Manhattan 38) que se leen como un
+          error de color, no como una decisión. Ver §7.2 del insumo gráfico. */}
+      <header className="border-b border-arena-200 bg-white">
+        <BannerInstitucional />
+
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
-          <Link to={HOME_POR_ROL[rol]} className="flex items-center gap-2.5">
-            <span className="rounded-lg bg-white/15 p-1.5">
-              <Trees size={22} aria-hidden="true" />
+          {/* Sin icono de árbol: el isotipo CONAF del banner está 80 px más
+              arriba, y «Red de Casas Bienestar» es el nombre de la aplicación,
+              que el banner no dice. */}
+          <Link to={HOME_POR_ROL[rol]} className="leading-tight">
+            <span className="block text-base font-semibold text-verde-900">
+              Red de Casas Bienestar
             </span>
-            <span className="leading-tight">
-              <span className="block text-base font-semibold">Red de Casas Bienestar</span>
-              <span className="block text-xs text-verde-100">
-                Casas de Huéspedes y Veraneo · CONAF
-              </span>
-            </span>
+            <span className="block text-xs text-slate-500">Casas de Huéspedes y Veraneo</span>
           </Link>
 
-          <div className="ml-auto flex flex-wrap items-center gap-3">
+          <div className="no-imprimir ml-auto flex flex-wrap items-center gap-3">
             <div className="hidden text-right text-xs leading-tight sm:block">
               <span className="block font-medium">{usuario?.nombre}</span>
-              <span className="block text-verde-100">{usuario?.unidad}</span>
+              <span className="block text-slate-500">{usuario?.unidad}</span>
             </div>
-            <label className="flex items-center gap-2 rounded-lg bg-verde-800/60 px-2.5 py-1.5">
-              <UserRound size={16} aria-hidden="true" className="text-verde-100" />
+            <label className="flex items-center gap-2 rounded-lg border border-arena-200 bg-arena-100 px-2.5 py-1.5">
+              <UserRound size={16} aria-hidden="true" className="text-slate-500" />
               <span className="sr-only">Ver el sistema como</span>
               <select
                 value={rol}
                 onChange={(e) => cambiarRol(e.target.value)}
-                className="cursor-pointer bg-transparent text-sm font-medium text-white focus:outline-none"
+                className="cursor-pointer bg-transparent text-sm font-medium text-slate-800 focus:outline-none"
               >
                 {ROLES.map((r) => (
                   <option key={r.valor} value={r.valor} className="text-slate-800">
@@ -109,7 +113,7 @@ export function AppLayout() {
           </div>
         </div>
 
-        <nav aria-label="Secciones del perfil" className="border-t border-verde-600/50">
+        <nav aria-label="Secciones del perfil" className="no-imprimir border-t border-arena-200">
           <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-2">
             {nav.map(({ a, texto, icono: Icono }) => (
               <NavLink
@@ -119,8 +123,8 @@ export function AppLayout() {
                 className={({ isActive }) =>
                   `flex min-h-11 items-center gap-2 border-b-2 px-3 py-2.5 text-sm whitespace-nowrap transition-colors ${
                     isActive
-                      ? 'border-white font-medium text-white'
-                      : 'border-transparent text-verde-100 hover:text-white'
+                      ? 'border-verde-700 font-medium text-verde-800'
+                      : 'border-transparent text-slate-600 hover:text-verde-700'
                   }`
                 }
               >
