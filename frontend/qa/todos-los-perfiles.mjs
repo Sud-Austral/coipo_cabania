@@ -9,8 +9,8 @@ const CAPS = process.env.CAPS ?? 'C:/Users/LUIS~1.MON/AppData/Local/Temp/caps'
 
 // Sin '#': la app pasó de HashRouter a BrowserRouter (src/main.jsx). Se recorta
 // la barra final de BASE en vez de usar new URL(ruta, BASE) porque con new URL
-// una ruta absoluta descarta el subpath, y así el mismo script sirve contra
-// http://localhost:5199/ y contra https://sud-austral.github.io/coipo_cabania/.
+// una ruta absoluta descartaría un eventual subpath, y así el mismo script
+// sirve tanto contra http://localhost:5199/ como contra el despliegue real.
 const url = (ruta) => BASE.replace(/\/+$/, '') + ruta
 
 const nav = await puppeteer.launch({

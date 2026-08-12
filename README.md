@@ -15,18 +15,17 @@ requisitos originales, en [INSUMO/](INSUMO/); la guía para incorporarse al proy
 
 ## Dónde está publicada
 
+**https://reserva-bienestar.conaf.cl** — servidor CONAF, red interna, puerto 8114. La despliega
+[.github/workflows/deploy-prod.yml](.github/workflows/deploy-prod.yml) en cada push a `main`.
 
-| Destino | URL | Cómo se despliega |
-|---|---|---|
-| Servidor CONAF (red interna) | https://reserva-bienestar.conaf.cl | `.github/workflows/deploy-prod.yml`, en cada push a `main`. Puerto 8114 |
-| GitHub Pages (demo pública) | https://sud-austral.github.io/coipo_cabania/ | `.github/workflows/pages.yml` |
+El sitio muestra una franja permanente advirtiendo que es una maqueta sin valor operativo
+([AvisoDemostracion.jsx](frontend/src/components/layout/AvisoDemostracion.jsx)).
 
-El mismo código produce los dos sitios: la única diferencia es el `--base` con que se construye.
-En el servidor es `/` (lo fija el `ARG BASE_PATH` de `frontend/Dockerfile`); en Pages es
-`/coipo_cabania/`. Por eso `vite.config.js` no declara ningún `base`.
-
-Las dos publicaciones muestran una franja permanente advirtiendo que es una maqueta sin valor
-operativo (`frontend/src/components/layout/AvisoDemostracion.jsx`).
+> La maqueta se publicaba además en GitHub Pages. Esa publicación se retiró al desplegar en el
+> servidor: Pages gratuito exige que el repositorio sea **público**, y el pipeline institucional
+> exige que sea **privado** — su workflow reusable vive en un repositorio privado, que un repo
+> público no puede invocar. Para mostrar la maqueta fuera de la red interna, `npm run dev` en el
+> propio equipo.
 
 ## Desarrollo
 
@@ -44,8 +43,8 @@ CLI de Claude Code instalado localmente y está gitignoreado.
 ## QA
 
 `frontend/qa/` son cuatro scripts de Puppeteer que se corren **a mano** contra un servidor ya
-levantado (`npm run preview -- --port 5199 --strictPort`). No corren en CI: `pages.yml` usa
-ubuntu y `puppeteer-core` no trae navegador.
+levantado (`npm run preview -- --port 5199 --strictPort`). No corren en CI: el runner no trae
+navegador para `puppeteer-core`.
 
 ```bash
 node qa/todos-los-perfiles.mjs      # las 15 vistas de los 5 perfiles

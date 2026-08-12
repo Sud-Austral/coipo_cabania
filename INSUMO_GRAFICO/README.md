@@ -42,7 +42,7 @@ son 150 KB de lo mismo.
 
 | Qué | Dónde |
 | --- | --- |
-| El asset que compila Vite | `frontend/src/assets/banner-conaf-uia.jpg` (importado desde JS: hash de contenido y el `base` del build resuelto solo, sea `/` en el servidor CONAF o `/coipo_cabania/` en Pages) |
+| El asset que compila Vite | `frontend/src/assets/banner-conaf-uia.jpg` (importado desde JS: hash de contenido y el `base` del build resuelto solo) |
 | El componente | `frontend/src/components/layout/BannerInstitucional.jsx` |
 | Dónde sale | En **todas** las rutas, sin condicional: en `App.jsx` cada `<Route>` cuelga de `<Route element={<AppLayout/>}>`. Esta app no tiene login, ni pantalla de error, ni esqueleto de pre-pintado (`index.html` trae un `<div id="root">` vacío), así que las excepciones del §7.3 del prompt no tienen a qué aplicarse |
 | El landmark | El banner va **dentro** del `<header>` que ya existía, como primer hijo. Un solo `<header>` en todo el DOM → un solo landmark `banner`, sin degradar nada a `<div>`. Lo comprueba el script de QA contando en el DOM renderizado |
@@ -51,7 +51,7 @@ son 150 KB de lo mismo.
 | El apilado banner + cabecera | No hace falta receta de app shell: la app usa scroll de documento (`min-h-dvh`) y nada es `sticky`, así que el banner se va al scrollear. **No reintroducir `.app-frame`/`.app-shell`** |
 | Los iconos que se publican | `frontend/public/favicon-32.png`, `frontend/public/apple-touch-icon.png`, enlazados en `frontend/index.html` con el marcador de `BASE_URL` de Vite, que el build reemplaza por el `base` del destino. **No con `./`**: con `BrowserRouter`, desde una ruta profunda como `/inmuebles/22` el relativo pediría `/inmuebles/favicon-32.png` y el fallback de SPA devolvería el `index.html` con un 200 |
 | Cómo se generan los iconos | **A mano**, con la caja de recorte de la tabla de abajo. No hay script: los PNG entregados ya están aceptados y el asset está congelado, así que un generador solo produciría archivos idénticos. |
-| Cómo se verifica | `node qa/banner-institucional.mjs`, a mano, con el servidor en `http://localhost:5199/`. **No hay `npm run verify:banner` ni `frontend/scripts/`**. No corre en CI: `.github/workflows/pages.yml` es ubuntu y `puppeteer-core` no trae navegador |
+| Cómo se verifica | `node qa/banner-institucional.mjs`, a mano, con el servidor en `http://localhost:5199/`. **No hay `npm run verify:banner` ni `frontend/scripts/`**. No corre en CI: el runner del despliegue no trae navegador para `puppeteer-core` |
 
 ⚠️ **Dos trampas que este prompt no cubre y costaron una maqueta rota cada una.** Las dos son
 silenciosas: el CSS es válido, no hay error en consola, y el banner *parece* funcionar.

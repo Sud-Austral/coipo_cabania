@@ -3,9 +3,12 @@ name: Deploy prod
 # Despliegue real a la infraestructura CONAF: servidor 172.31.2.41, puerto 8114,
 # dominio reserva-bienestar.conaf.cl (fila reserva_huesped del registro
 # app_master.xlsx, donde el dominio está pendiente de corregir).
-# Coexiste con pages.yml, que sigue publicando la misma maqueta
-# en https://sud-austral.github.io/coipo_cabania/ para poder mostrarla sin la red
-# interna.
+#
+# Es el único destino de la aplicación. La publicación en GitHub Pages se retiró
+# al desplegar acá: Pages gratuito exige repositorio público, y este workflow
+# reusable vive en un repositorio privado, que un repo público no puede invocar
+# (el error es "workflow was not found"). Además la Guía 2 prohíbe los repos
+# públicos en este ecosistema por la seguridad del runner self-hosted.
 #
 # Este archivo es IDÉNTICO al de cualquier otra app CONAF y NUNCA se edita por
 # app: toda la lógica de despliegue vive centralizada en

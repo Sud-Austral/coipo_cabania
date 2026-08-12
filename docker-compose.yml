@@ -20,9 +20,8 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        # En el servidor la app se sirve en la raíz del dominio
-        # (https://reserva-bienestar.conaf.cl/catalogo). El subpath /coipo_cabania/
-        # es exclusivo de GitHub Pages y lo fija .github/workflows/pages.yml.
+        # La app se sirve en la raíz del dominio
+        # (https://reserva-bienestar.conaf.cl/catalogo).
         BASE_PATH: /
     ports:
       # APP_PORT sale del .env del servidor (ver .env.example): 8114, asignado en

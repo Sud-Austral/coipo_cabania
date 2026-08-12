@@ -67,7 +67,7 @@ El acceso a perfiles es mediante un **selector de rol simple siempre visible** (
 | Exportaciones reales (CSV/Excel/PDF) | Botones con descarga simulada |
 | Validación real contra nómina de afiliados | Todos los datos son ficticios |
 | Pagos en línea | El propio PDF lo deja como evolución futura |
-| Deploy en servidor CONAF (pipeline `infra-docker-base`) | El mock se publica en GitHub Pages; el pipeline queda para la fase con backend |
+| ~~Deploy en servidor CONAF (pipeline `infra-docker-base`)~~ | Se adelantó a esta fase (12-08-2026): la maqueta se despliega en `reserva-bienestar.conaf.cl`, puerto 8114, con un único contenedor. Ver §10 |
 
 ## 5. Integraciones requeridas
 
@@ -88,8 +88,8 @@ El acceso a perfiles es mediante un **selector de rol simple siempre visible** (
 - Datos: 34 inmuebles con **nombre y ubicación reales** (anexo del PDF), fotos de stock y
   datos inventados. **Personas y RUTs 100 % ficticios.**
 - Idioma: español.
-- Publicación: **GitHub Pages** (`https://sud-austral.github.io/coipo_cabania/`), con
-  workflow de deploy propio (independiente del pipeline de producción).
+- Publicación: **servidor CONAF** (`https://reserva-bienestar.conaf.cl`), con el pipeline
+  institucional. Hasta el 12-08-2026 fue GitHub Pages; ver §10.
 - Reglas de negocio del PDF representadas en la UI: prelación médica > laboral > personal,
   tarifas diferenciadas afiliado/externo, temporadas y bloqueos.
 
