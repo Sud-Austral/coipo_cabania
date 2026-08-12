@@ -21,6 +21,7 @@ import { reiniciarDemo } from '../../api/store.js'
 import { Modal } from '../ui/Modal.jsx'
 import { Boton } from '../ui/Elementos.jsx'
 import { BannerInstitucional } from './BannerInstitucional.jsx'
+import { AvisoDemostracion } from './AvisoDemostracion.jsx'
 
 /** Navegación de cada perfil. Un perfil solo ve sus propias secciones. */
 const NAV_POR_ROL = {
@@ -135,6 +136,8 @@ export function AppLayout() {
           </div>
         </nav>
       </header>
+
+      <AvisoDemostracion />
 
       {esNoAfiliado && (
         <div className="border-b border-amber-200 bg-amber-50">

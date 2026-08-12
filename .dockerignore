@@ -1,0 +1,29 @@
+# El build context es la RAÍZ del repo (ver docker-compose.yml), así que todo lo
+# que no necesite el build va acá: cada archivo de más se transfiere al demonio de
+# Docker y puede terminar dentro de una capa.
+node_modules
+frontend/node_modules
+dist
+frontend/dist
+.git
+.github
+.claude
+.env
+.env.*
+!.env.example
+.vscode
+.idea
+
+# Documentación e insumos: entre docs/ e INSUMO/ hay dos PDF de varios MB y ningún
+# paso del build los toca.
+README.md
+CLAUDE.md
+docs
+INSUMO
+INSUMO_GRAFICO
+INSUMO_PRODUCCION
+deploy
+
+# QA manual con Chrome: se corre desde el equipo de trabajo contra un servidor ya
+# levantado, nunca dentro de la imagen.
+frontend/qa

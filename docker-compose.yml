@@ -1,0 +1,42 @@
+# Stack de producción de la MAQUETA: un único servicio.
+#
+# `app` es el build de React servido por nginx. No hay `backend` ni Postgres: hoy
+# todo el estado vive en el localStorage del navegador
+# (frontend/src/api/store.js) y no existe una sola llamada de red a un servidor
+# propio en frontend/src/. Es la primera app del ecosistema con un solo
+# contenedor; el patrón de dos servicios de INSUMO/DOCKER.md se retoma
+# tal cual en la fase 2, agregando `backend` y el depends_on con
+# condition: service_healthy.
+#
+# Por lo mismo, /health lo responde el propio nginx (frontend/nginx.conf) y no un
+# proxy hacia un backend que no existe.
+
+services:
+  app:
+    build:
+      # La RAÍZ del repo, no frontend/: es la convención del ecosistema, y deja
+      # que el Dockerfile copie desde cualquier ruta relativa a la raíz cuando la
+      # fase 2 traiga db/schema.sql.
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        # En el servidor la app se sirve en la raíz del dominio
+        # (https://reserva-bienestar.conaf.cl/catalogo). El subpath /coipo_cabania/
+        # es exclusivo de GitHub Pages y lo fija .github/workflows/pages.yml.
+        BASE_PATH: /
+    ports:
+      # APP_PORT sale del .env del servidor (ver .env.example): 8114, asignado en
+      # el registro app_master.xlsx. El 8000 de la derecha es fijo — es el
+      # `listen` de frontend/nginx.conf y no cambia por app.
+      - "${APP_PORT:-8114}:8000"
+    # Con un solo servicio no hay ningún depends_on que aproveche este estado,
+    # pero es la única evidencia desde dentro del servidor: `docker compose ps`
+    # dice healthy/unhealthy en vez de solo "Up". wget viene en BusyBox, en la
+    # imagen alpine de nginx; curl no.
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped

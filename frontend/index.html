@@ -2,15 +2,22 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <!-- Isotipo CONAF recortado del banner. Ruta RELATIVA a propósito: el sitio
-         se publica bajo /coipo_cabania/ y una barra inicial resolvería contra
-         la raíz del dominio. El "./" es seguro porque hay HashRouter (la URL
-         del documento siempre es .../coipo_cabania/#/loquesea). En fase 2, al
-         pasar a BrowserRouter, cambiar a %BASE_URL%favicon-32.png: una ruta
-         profunda como /coipo_cabania/inmuebles/22 resolvería mal el "./" y la
-         reescritura SPA devolvería 200 con el index.html dentro, no un 404. -->
-    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <!-- Isotipo CONAF recortado del banner. El marcador de BASE_URL que llevan
+         los href de abajo lo sustituye Vite al construir por el --base
+         correspondiente ("/" en el servidor CONAF, "/coipo_cabania/" en Pages),
+         así que la ruta queda siempre ABSOLUTA. (No se nombra acá con su sintaxis
+         literal a propósito: Vite también lo sustituiría dentro de este
+         comentario y el HTML publicado quedaría ilegible.)
+
+         Es obligatorio con BrowserRouter. Con el "./" anterior, desde una ruta
+         profunda como /inmuebles/22 el navegador pediría
+         /inmuebles/favicon-32.png, y el try_files del nginx respondería 200 con
+         el index.html adentro: el navegador intentaría decodificar HTML como PNG
+         en cada vista y el fallo sería mudo, sin 404 en ninguna consola.
+         Ojo: Vite NO reescribe las rutas relativas del HTML —las deja
+         literales—, así que esto no se arregla solo al cambiar el base. -->
+    <link rel="icon" type="image/png" sizes="32x32" href="%BASE_URL%favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="%BASE_URL%apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"

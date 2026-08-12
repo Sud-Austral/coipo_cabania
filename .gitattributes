@@ -1,2 +1,13 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# LF explícito, independiente del core.autocrlf de cada equipo: estos archivos se
+# copian dentro de imágenes Linux o se instalan en el servidor. Un .conf o un .sh
+# que llegue con CRLF falla con mensajes que no mencionan los saltos de línea
+# ("bad interpreter: /usr/bin/env bash^M"), y ya costó un despliegue en el
+# ecosistema.
+*.conf     text eol=lf
+*.sh       text eol=lf
+*.yml      text eol=lf
+Dockerfile text eol=lf
+.env.example text eol=lf

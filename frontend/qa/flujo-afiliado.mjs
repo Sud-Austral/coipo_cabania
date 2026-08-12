@@ -5,9 +5,15 @@
 import puppeteer from 'puppeteer-core'
 import { mkdirSync } from 'node:fs'
 
-const BASE = process.env.BASE ?? 'http://localhost:5199/coipo_cabania/'
+const BASE = process.env.BASE ?? 'http://localhost:5199/'
 const CAPS = process.env.CAPS ?? 'C:/Users/LUIS~1.MON/AppData/Local/Temp/caps'
 mkdirSync(CAPS, { recursive: true })
+
+// Sin '#': la app pasó de HashRouter a BrowserRouter (src/main.jsx). Se recorta
+// la barra final de BASE en vez de usar new URL(ruta, BASE) porque con new URL
+// una ruta absoluta descarta el subpath, y así el mismo script sirve contra
+// http://localhost:5199/ y contra https://sud-austral.github.io/coipo_cabania/.
+const url = (ruta) => BASE.replace(/\/+$/, '') + ruta
 
 const pasos = []
 const ok = (m) => { pasos.push(['OK', m]); console.log('  OK   ' + m) }
@@ -49,7 +55,7 @@ const clicPorTexto = async (sel, t) => {
 
 try {
   // ---- 1. Catálogo ----
-  await pag.goto(BASE + '#/catalogo', { waitUntil: 'networkidle2' })
+  await pag.goto(url('/catalogo'), { waitUntil: 'networkidle2' })
   await esperarTexto('Catálogo de inmuebles')
   const t1 = await texto()
   t1.includes('34 de 34 inmuebles') ? ok('Catálogo carga los 34 inmuebles') : fail('El catálogo no muestra 34 inmuebles')
@@ -70,7 +76,7 @@ try {
   await cap('q1-catalogo-filtrado')
 
   // ---- 3. Ficha del inmueble vitrina ----
-  await pag.goto(BASE + '#/inmuebles/2', { waitUntil: 'networkidle2' })
+  await pag.goto(url('/inmuebles/2'), { waitUntil: 'networkidle2' })
   await esperarTexto('Casa de Veraneo Bahía Inglesa 1')
   const t3 = await texto()
   const enFicha = ['Disponibilidad', 'Tarifas de referencia', 'Zonas de interés', 'Equipamiento', 'Playa La Piscina']
@@ -81,7 +87,7 @@ try {
   nMini === 5 ? ok('Galería con 5 fotografías') : fail(`Galería con ${nMini} fotografías (se esperaban 5)`)
 
   // ---- 4. Iniciar reserva ----
-  await pag.goto(BASE + '#/inmuebles/2/reservar', { waitUntil: 'networkidle2' })
+  await pag.goto(url('/inmuebles/2/reservar'), { waitUntil: 'networkidle2' })
   await esperarTexto('Solicitud de reserva')
   ok('Asistente de reserva abre en el paso 1')
 
@@ -188,7 +194,7 @@ try {
   await cap('q7-comprobante')
 
   // ---- 8. Aparece en Mis reservas ----
-  await pag.goto(BASE + '#/mis-reservas', { waitUntil: 'networkidle2' })
+  await pag.goto(url('/mis-reservas'), { waitUntil: 'networkidle2' })
   await esperarTexto('Mis reservas')
   const aparece = await esperarTexto(codigo, 8000)
   aparece ? ok('La nueva reserva aparece en Mis reservas') : fail('La reserva no aparece en Mis reservas')

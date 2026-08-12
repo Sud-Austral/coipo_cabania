@@ -1,30 +1,68 @@
-# coipo_cabania
-go2
+# coipo_cabania — Sistema de Reservas Bienestar CONAF
 
+Maqueta del sistema de reservas de la **Red de Casas de Huéspedes y Veraneo** del Servicio de
+Bienestar de CONAF (34 inmuebles entre Antofagasta y Magallanes).
 
-Estimado/a [Nombre / Empresa]:
+Es **solo frontend** (React 19 + Vite, en `frontend/`): no hay backend ni base de datos, los
+datos son ficticios y el estado de la demostración vive en el `localStorage` del navegador
+(`frontend/src/api/store.js`). El backend FastAPI + PostgreSQL es la fase 2; `backend/` y `db/`
+están vacíos a la espera de eso.
 
-Junto con saludar, y en el marco de la continuidad del Sistema de Trazabilidad de Transporte Forestal actualmente en plan piloto en el sur de Chile, CONAF asumirá directamente la operación y mantención del sistema, desplegándolo en su propia infraestructura. Para realizar esta migración sin interrumpir el piloto en curso, necesito coordinar con ustedes el traspaso de los datos y componentes que hoy residen en el ambiente de producción.
+El alcance y las decisiones de esta fase están en [docs/ALCANCE.md](docs/ALCANCE.md); los
+requisitos originales, en [INSUMO/](INSUMO/); la guía para incorporarse al proyecto, en
+[docs/GUIA_INDUCCION.md](docs/GUIA_INDUCCION.md).
 
-En concreto, agradeceré nos faciliten lo siguiente:
+## Dónde está publicada
 
-1. Datos del piloto (base de datos de producción)
-Un respaldo completo de la base de datos PostgreSQL de producción (chile_prod), preferentemente un pg_dump en formato custom o SQL. Alternativamente, credenciales de solo lectura temporales para que nuestro equipo genere el respaldo directamente. Estos registros corresponden a la operación del piloto de CONAF (permisos, ítems, controles, tracks y usuarios).
+| Destino | URL | Cómo se despliega |
+|---|---|---|
+| Servidor CONAF (red interna) | https://reserva-bienestar.conaf.cl | `.github/workflows/deploy-prod.yml`, en cada push a `main`. Puerto 8114 |
+| GitHub Pages (demo pública) | https://sud-austral.github.io/coipo_cabania/ | `.github/workflows/pages.yml` |
 
-2. Archivos almacenados fuera de la base de datos
-Dado que la aplicación guarda ciertos archivos en el sistema de archivos del servidor y no en la base de datos, solicito también:
+El mismo código produce los dos sitios: la única diferencia es el `--base` con que se construye.
+En el servidor es `/` (lo fija el `ARG BASE_PATH` de `frontend/Dockerfile`); en Pages es
+`/coipo_cabania/`. Por eso `vite.config.js` no declara ningún `base`.
 
-Las fotografías de los permisos/ítems cargadas por los fiscalizadores.
-Los tracks GPS/GPX de los transportes, si se almacenan como archivos.
-Los archivos APK publicados de la aplicación móvil. (Todo lo que resida bajo el directorio de almacenamiento de la aplicación, referenciado en el código como PHOTO_DIR.)
-3. Estado del esquema de base de datos
-Confirmación de la versión del esquema actualmente en producción: qué migraciones (Flyway) están aplicadas y si existe alguna modificación en producción que no esté reflejada en el repositorio, para poder replicar el esquema de forma idéntica.
+Las dos publicaciones muestran una franja permanente advirtiendo que es una maqueta sin valor
+operativo (`frontend/src/components/layout/AvisoDemostracion.jsx`).
 
-4. Continuidad de la aplicación móvil (deseable)
-El keystore de firma de release de Android (.keystore/.jks) junto con sus contraseñas (store, alias y key). Esto nos permitiría publicar futuras versiones del APK manteniendo la misma firma, de modo que los dispositivos ya desplegados en terreno reciban las actualizaciones sin necesidad de reinstalar la aplicación.
+## Desarrollo
 
-Consideraciones de entrega: dado que el respaldo contiene datos personales (nombres de conductores, patentes, usuarios del sistema), solicito que la entrega se realice por un canal seguro (enlace cifrado, medio físico o transferencia protegida) y no por correo en texto plano.
+```bash
+cd frontend
+npm ci
+npm run dev          # http://localhost:5173/
+npm run lint
+npm run build
+```
 
-Quedo a disposición para coordinar una reunión de traspaso técnico que facilite el proceso. Agradezco de antemano su colaboración.
+Todos los `npm` se ejecutan **dentro de `frontend/`**: el `package.json` de la raíz es solo el
+CLI de Claude Code instalado localmente y está gitignoreado.
 
-Saludos cordiales,
+## QA
+
+`frontend/qa/` son cuatro scripts de Puppeteer que se corren **a mano** contra un servidor ya
+levantado (`npm run preview -- --port 5199 --strictPort`). No corren en CI: `pages.yml` usa
+ubuntu y `puppeteer-core` no trae navegador.
+
+```bash
+node qa/todos-los-perfiles.mjs      # las 15 vistas de los 5 perfiles
+node qa/flujo-afiliado.mjs          # el flujo crítico de reserva
+node qa/revision-movil.mjs          # desbordes horizontales a 375 px
+node qa/banner-institucional.mjs    # geometría del banner CONAF · UIA
+```
+
+Se pueden apuntar a cualquier despliegue con `BASE=https://... node qa/...`.
+
+## Despliegue
+
+[INSUMO/](INSUMO/) documenta el pipeline institucional (guías 6 y 8, Docker y conexión a Postgres). Lo mínimo que hay que saber:
+
+- La carpeta del servidor es `/opt/apps/coipo_cabania/`, derivada del nombre del repo. El `.env`
+  real vive solo ahí y **no** lo crea el pipeline: si falta, el deploy falla en su primer paso.
+  La plantilla es [.env.example](.env.example).
+- [deploy/nginx-reserva-bienestar.conaf.cl.conf](deploy/nginx-reserva-bienestar.conaf.cl.conf) es la
+  copia de referencia del vhost del servidor; instalarlo o editarlo es un paso manual.
+- El pipeline valida el despliegue con un único `curl` a `/health`, cinco segundos después de
+  levantar y sin reintentos. Lo responde el nginx del contenedor
+  ([frontend/nginx.conf](frontend/nginx.conf)), no un backend.

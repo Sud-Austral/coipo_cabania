@@ -12,6 +12,17 @@ dist
 dist-ssr
 *.local
 
+# El .env real lo crea a mano el bootstrap del servidor
+# (/opt/apps/coipo_cabania/.env, chmod 600) y el pipeline lo excluye del rsync
+# para que sobreviva a cada deploy. Acá solo se versiona la plantilla.
+.env
+.env.*
+!.env.example
+
+# Datos persistentes de volúmenes. Hoy no hay ninguno; el pipeline ya excluye
+# data/ del rsync, así que queda declarado por si la fase 2 los trae.
+data/
+
 # Herramientas locales, ajenas al proyecto (CLI de Claude Code instalado en la raíz)
 /package.json
 /package-lock.json

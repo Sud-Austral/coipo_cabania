@@ -4,8 +4,14 @@
  */
 import puppeteer from 'puppeteer-core'
 
-const BASE = process.env.BASE ?? 'http://localhost:5199/coipo_cabania/'
+const BASE = process.env.BASE ?? 'http://localhost:5199/'
 const CAPS = process.env.CAPS ?? 'C:/Users/LUIS~1.MON/AppData/Local/Temp/caps'
+
+// Sin '#': la app pasó de HashRouter a BrowserRouter (src/main.jsx). Se recorta
+// la barra final de BASE en vez de usar new URL(ruta, BASE) porque con new URL
+// una ruta absoluta descarta el subpath, y así el mismo script sirve contra
+// http://localhost:5199/ y contra https://sud-austral.github.io/coipo_cabania/.
+const url = (ruta) => BASE.replace(/\/+$/, '') + ruta
 
 const nav = await puppeteer.launch({
   executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe',
@@ -24,7 +30,7 @@ let fallas = 0
 const revisar = async (rol, ruta, nombre, esperados, alto = 1500) => {
   await p.evaluate((r) => localStorage.setItem('coipo_rol_v1', r), rol)
   await p.setViewport({ width: 1366, height: alto })
-  await p.goto(BASE + '#' + ruta, { waitUntil: 'networkidle2' })
+  await p.goto(url(ruta), { waitUntil: 'networkidle2' })
   await p.reload({ waitUntil: 'networkidle2' })
   await new Promise((r) => setTimeout(r, 2200))
   await p.screenshot({ path: `${CAPS}/${nombre}.png`, fullPage: true })

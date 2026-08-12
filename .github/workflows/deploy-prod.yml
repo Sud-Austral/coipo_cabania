@@ -1,0 +1,34 @@
+name: Deploy prod
+
+# Despliegue real a la infraestructura CONAF: servidor 172.31.2.41, puerto 8114,
+# dominio reserva-bienestar.conaf.cl (fila reserva_huesped del registro
+# app_master.xlsx, donde el dominio está pendiente de corregir).
+# Coexiste con pages.yml, que sigue publicando la misma maqueta
+# en https://sud-austral.github.io/coipo_cabania/ para poder mostrarla sin la red
+# interna.
+#
+# Este archivo es IDÉNTICO al de cualquier otra app CONAF y NUNCA se edita por
+# app: toda la lógica de despliegue vive centralizada en
+# Sud-Austral/infra-docker-base (INSUMO/guia-6-github-actions-por-repo.md).
+# Si parece que esta app necesita un paso distinto, el cambio va en el workflow
+# reusable, no acá.
+#
+# Requiere, ANTES del primer push efectivo a main:
+#   1. /opt/apps/coipo_cabania/.env con APP_PORT=8114, finales de línea Unix,
+#      chmod 600 y dueño deploy:deploy — la CARPETA también. El pipeline arranca
+#      con un `test -f` sobre ese archivo y falla de entrada si no está.
+#   2. El puerto 8114 libre en el servidor (`ss -tlnp | grep -w 8114`).
+#   3. El runner self-hosted `conaf-prod` en estado Idle en la pestaña Runners de
+#      la organización — no alcanza con que systemctl lo dé por corriendo.
+#   4. El vhost del servidor instalado
+#      (deploy/nginx-reserva-bienestar.conaf.cl.conf).
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    uses: Sud-Austral/infra-docker-base/.github/workflows/deploy.yml@main
+    with:
+      app_name: ${{ github.event.repository.name }}

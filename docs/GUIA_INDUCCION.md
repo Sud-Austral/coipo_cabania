@@ -68,7 +68,7 @@ Verás algo así:
 
 ```
 VITE v8.1.5  ready in 386 ms
-➜  Local:   http://localhost:5173/coipo_cabania/
+➜  Local:   http://localhost:5173/
 ```
 
 Abre esa dirección en Chrome. Debes ver el catálogo con 34 inmuebles.
@@ -718,7 +718,7 @@ antes de repetir o al desmontar el componente.
 
 **Verificación** (`F12` → `Console`)
 1. Al entrar al catálogo verás el mensaje **dos veces**. No es un error: en desarrollo
-   React usa `StrictMode` ([main.jsx:13](../frontend/src/main.jsx#L13)) y monta cada
+   React usa `StrictMode` ([main.jsx:20](../frontend/src/main.jsx#L20)) y monta cada
    componente dos veces para detectar efectos mal escritos. En producción ocurre una vez.
 2. Escribe en el buscador letra por letra: cada tecla dispara "LIMPIEZA" y luego
    "EFECTO". Así se ve que el arreglo de dependencias manda.
@@ -742,9 +742,12 @@ tanto.
 
 **Concepto — enrutador**
 [App.jsx](../frontend/src/App.jsx#L24-L139) es el mapa: cada `<Route path="…"
-element={…} />` asocia una URL con un componente. Las URL llevan `#` (por ejemplo
-`.../#/catalogo`) porque el sitio se publica en GitHub Pages, que es hosting estático
-([main.jsx:8-11](../frontend/src/main.jsx#L8-L11)).
+element={…} />` asocia una URL con un componente. Las URL son limpias (por ejemplo
+`.../catalogo`, sin `#`) porque la aplicación usa `BrowserRouter`
+([main.jsx:8-18](../frontend/src/main.jsx#L8-L18)). Para que recargar una ruta profunda
+no dé 404, cada destino hace su parte: en el servidor CONAF el nginx del contenedor
+devuelve `index.html` para cualquier ruta que no sea un archivo, y en GitHub Pages ese
+papel lo cumple el `404.html` que copia el workflow de publicación.
 
 **Cambio 1** — crea el archivo `frontend/src/pages/publico/Ayuda.jsx`:
 
@@ -783,8 +786,8 @@ del catálogo:
         <Route path="ayuda" element={<Ayuda />} />
 ```
 
-**Cambio 4** — [components/layout/AppLayout.jsx](../frontend/src/components/layout/AppLayout.jsx#L27-L30)
-línea **29**, agrega el enlace al menú del afiliado:
+**Cambio 4** — [components/layout/AppLayout.jsx](../frontend/src/components/layout/AppLayout.jsx#L28-L31)
+línea **30**, agrega el enlace al menú del afiliado:
 
 ```jsx
   afiliado: [
@@ -798,8 +801,8 @@ línea **29**, agrega el enlace al menú del afiliado:
 
 **Verificación**
 1. Aparece "Ayuda" en la barra verde (solo con el perfil Afiliado/a).
-2. Al hacer clic, la URL queda `…/#/ayuda` y se ve la página nueva.
-3. Escribe a mano `…/#/ayudaa` (mal escrito): te devuelve al catálogo, por la ruta
+2. Al hacer clic, la URL queda `…/ayuda` y se ve la página nueva.
+3. Escribe a mano `…/ayudaa` (mal escrito): te devuelve al catálogo, por la ruta
    comodín `<Route path="*" …>` de la línea 137.
 4. Cambia el rol a "Encargada regional": el enlace desaparece, porque cada perfil tiene
    su propio menú.
@@ -1382,12 +1385,14 @@ son los que devuelven `responder(...)` / `fallar(...)`.
 **Verificación del paso 3** (sin interfaz todavía)
 En Chrome, `F12` → `Console`, pega:
 
-> La ruta empieza con `/coipo_cabania/` porque así está configurado `base` en
-> [vite.config.js](../frontend/vite.config.js#L8). Con `/src/api/…` a secas obtendrás
-> `Failed to fetch dynamically imported module`.
+> La ruta empieza con `/` porque en `npm run dev` la aplicación se sirve en la raíz:
+> [vite.config.js](../frontend/vite.config.js) ya no declara ningún `base`, cada destino
+> fija el suyo al construir. Si alguna vez pruebas esto contra el sitio de GitHub Pages,
+> ahí el import sí lleva el prefijo del repo (`/coipo_cabania/src/api/…`) — aunque en
+> Pages no existe `src/`, porque se sirve el bundle ya construido.
 
 ```js
-const m = await import('/coipo_cabania/src/api/valoraciones.js'); m.resumenValoracion(9)
+const m = await import('/src/api/valoraciones.js'); m.resumenValoracion(9)
 ```
 
 Debe imprimir `{promedio: 4.5, total: 2}` (las dos valoraciones sembradas del inmueble 9:
@@ -1396,7 +1401,7 @@ Debe imprimir `{promedio: 4.5, total: 2}` (las dos valoraciones sembradas del in
 Prueba también un caso sin datos:
 
 ```js
-const m = await import('/coipo_cabania/src/api/valoraciones.js'); m.resumenValoracion(1)
+const m = await import('/src/api/valoraciones.js'); m.resumenValoracion(1)
 ```
 
 Debe imprimir `{promedio: null, total: 0}`.
@@ -1576,7 +1581,7 @@ calculado y la interfaz no cambiará ni una línea.
 `F12` → `Console`:
 
 ```js
-const m = await import('/coipo_cabania/src/api/inmuebles.js'); (await m.getInmueble(9)).valoracion
+const m = await import('/src/api/inmuebles.js'); (await m.getInmueble(9)).valoracion
 ```
 
 Debe imprimir `{promedio: 4.5, total: 2}`.
@@ -1812,13 +1817,13 @@ Debe quedar así (se agrega una tarjeta completa **antes**):
 ```
 
 **Verificación del paso 7** ✅
-1. Entra a la ficha del inmueble 9 (URL directa: `http://localhost:5173/coipo_cabania/#/inmuebles/9`).
+1. Entra a la ficha del inmueble 9 (URL directa: `http://localhost:5173/inmuebles/9`).
 2. Bajo el título grande: `★★★★★ 4.5 (2)`.
 3. Más abajo, entre "Descripción" y "Ubicación y acceso", la tarjeta **Valoraciones de
    huéspedes** con el promedio y **dos** comentarios: Pedro Millán Quezada (5.0, 24 jul
    2026) y Ana Villalobos Díaz (4.0, 18 jun 2026), ordenados del más nuevo al más
    antiguo.
-4. Entra al inmueble 1 (`#/inmuebles/1`): la tarjeta existe pero dice *"Este inmueble
+4. Entra al inmueble 1 (`/inmuebles/1`): la tarjeta existe pero dice *"Este inmueble
    todavía no tiene valoraciones…"*, y **no** hay estrellas bajo el título.
 
 **Si falla**
@@ -1876,7 +1881,7 @@ Debe quedar así:
 `F12` → `Console`:
 
 ```js
-const m = await import('/coipo_cabania/src/api/reservas.js'); (await m.getReservas({ usuario_id: 1 })).items.map((r) => [r.codigo, r.estado, r.valoracion])
+const m = await import('/src/api/reservas.js'); (await m.getReservas({ usuario_id: 1 })).items.map((r) => [r.codigo, r.estado, r.valoracion])
 ```
 
 Debe listar las reservas de María Fuentes con `null` en la última columna (aún no ha
@@ -2183,7 +2188,7 @@ Antes de empezar: **"Reiniciar demostración"** en el pie de página, y perfil
 |---|---|---|
 | 1 | Ir a Catálogo | Las tarjetas con valoraciones muestran estrellas + promedio; las demás no muestran nada |
 | 2 | Buscar "Peñuelas" y entrar a la ficha | Bajo el título: `4.5 (2)`. Tarjeta "Valoraciones de huéspedes" con 2 comentarios |
-| 3 | Entrar a `#/inmuebles/1` | Mensaje "Este inmueble todavía no tiene valoraciones" |
+| 3 | Entrar a `/inmuebles/1` | Mensaje "Este inmueble todavía no tiene valoraciones" |
 | 4 | Menú "Mis reservas" | Las 3 reservas **Finalizadas** muestran botón **Valorar**; la Confirmada muestra **Desistir** |
 | 5 | Clic en **Valorar** de `R-2026-0012` | Se abre el modal "Valorar la estadía · R-2026-0012 · Casa de Huéspedes Valdivia" |
 | 6 | Sin elegir nota | "Enviar valoración" está **gris y deshabilitado**; el texto dice "Seleccione una nota de 1 a 5." |
@@ -2204,7 +2209,7 @@ Antes de empezar: **"Reiniciar demostración"** en el pie de página, y perfil
 
 | Caso | Cómo provocarlo | Resultado esperado |
 |---|---|---|
-| Reserva ya valorada | En la consola: `const m = await import('/coipo_cabania/src/api/valoraciones.js'); m.crearValoracion({inmueble_id:9, reserva_codigo:'R-2026-0006', estrellas:5}, {nombre:'Prueba'}).catch(e => console.log(e))` | `{status: 409, detail: 'Esta reserva ya fue valorada.'}` |
+| Reserva ya valorada | En la consola: `const m = await import('/src/api/valoraciones.js'); m.crearValoracion({inmueble_id:9, reserva_codigo:'R-2026-0006', estrellas:5}, {nombre:'Prueba'}).catch(e => console.log(e))` | `{status: 409, detail: 'Esta reserva ya fue valorada.'}` |
 | Nota fuera de rango | Igual, con `estrellas: 9` y un código no valorado | `{status: 422, detail: 'La valoración debe ser un número entero de 1 a 5 estrellas.'}` |
 | Reserva no finalizada | Igual, con `reserva_codigo: 'R-2026-0004'` (confirmada) | `{status: 409, detail: 'Solo se pueden valorar estadías finalizadas.'}` |
 | Reserva inexistente | `reserva_codigo: 'R-2026-9999'` | `{status: 404, detail: 'Reserva no encontrada'}` |

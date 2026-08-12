@@ -18,7 +18,12 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-const BASE = process.env.BASE ?? 'http://localhost:5199/coipo_cabania/'
+const BASE = process.env.BASE ?? 'http://localhost:5199/'
+// Sin '#': la app pasó de HashRouter a BrowserRouter (src/main.jsx). Se recorta
+// la barra final de BASE en vez de usar new URL(ruta, BASE) porque con new URL
+// una ruta absoluta descarta el subpath, y así el mismo script sirve contra
+// http://localhost:5199/ y contra https://sud-austral.github.io/coipo_cabania/.
+const url = (ruta) => BASE.replace(/\/+$/, '') + ruta
 // tmpdir() en vez de la ruta corta 8.3 que traen los otros scripts de qa: esa
 // está atada a un usuario concreto y falla con EPERM en cualquier otra máquina.
 const CAPS = process.env.CAPS ?? join(tmpdir(), 'caps-banner')
@@ -92,7 +97,7 @@ const filas = []
 
 for (const W of ANCHOS) {
   await p.setViewport({ width: W, height: 900, deviceScaleFactor: 1 })
-  await p.goto(BASE + '#/catalogo', { waitUntil: 'networkidle2' })
+  await p.goto(url('/catalogo'), { waitUntil: 'networkidle2' })
   await p.reload({ waitUntil: 'networkidle2' })
   await new Promise((r) => setTimeout(r, 2200))
 
@@ -204,7 +209,7 @@ for (const W of ANCHOS) {
 
 // --- Atributos y landmarks, una vez a 1366 ---
 await p.setViewport({ width: 1366, height: 900, deviceScaleFactor: 1 })
-await p.goto(BASE + '#/catalogo', { waitUntil: 'networkidle2' })
+await p.goto(url('/catalogo'), { waitUntil: 'networkidle2' })
 await new Promise((r) => setTimeout(r, 1500))
 const dom = await p.evaluate(() => {
   const img = document.querySelector('.banner-institucional img')
@@ -240,7 +245,7 @@ await sin.setRequestInterception(true)
 sin.on('request', (r) =>
   /banner-conaf-uia/.test(r.url()) && r.resourceType() === 'image' ? r.abort() : r.continue(),
 )
-await sin.goto(BASE + '#/catalogo', { waitUntil: 'networkidle2' })
+await sin.goto(url('/catalogo'), { waitUntil: 'networkidle2' })
 await new Promise((r) => setTimeout(r, 2000))
 const capSin = await sin.screenshot({
   encoding: 'base64',
@@ -263,7 +268,7 @@ console.log(`sin imagen: fondo rgb(${puntoSin}) alto ${altoSin.toFixed(2)} → $
 await sin.close()
 await p.evaluate(() => localStorage.setItem('coipo_rol_v1', 'afiliado'))
 await p.setViewport({ width: 794, height: 1123, deviceScaleFactor: 1 }) // A4 a 96 ppp
-await p.goto(BASE + '#/reservas/R-2026-0001', { waitUntil: 'networkidle2' })
+await p.goto(url('/reservas/R-2026-0001'), { waitUntil: 'networkidle2' })
 await new Promise((r) => setTimeout(r, 2000))
 await p.pdf({ path: `${CAPS}/comprobante.pdf`, format: 'A4', printBackground: false })
 // Además en PNG: un PDF no se puede mirar en cualquier parte, y esto es
