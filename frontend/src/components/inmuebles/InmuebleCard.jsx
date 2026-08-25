@@ -16,12 +16,12 @@ function tarifaDesde(inmueble, esExterno) {
   return { monto, unidad: 'por persona/noche' }
 }
 
-export function InmuebleCard({ inmueble, esExterno = false }) {
+export function InmuebleCard({ inmueble, esExterno = false, fechas = {} }) {
   const { monto, unidad } = tarifaDesde(inmueble, esExterno)
 
   return (
     <Link
-      to={`/inmuebles/${inmueble.id}`}
+      to={`/inmuebles/${inmueble.id}${fechas.entrada && fechas.salida ? `?entrada=${fechas.entrada}&salida=${fechas.salida}` : ''}`}
       className="group flex flex-col overflow-hidden rounded-xl border border-arena-200 bg-white shadow-sm transition-shadow hover:shadow-md"
     >
       <div className="relative aspect-16/10 overflow-hidden bg-arena-100">
@@ -65,6 +65,12 @@ export function InmuebleCard({ inmueble, esExterno = false }) {
         </p>
 
         <p className="mt-3 line-clamp-2 text-sm text-slate-500">{inmueble.descripcion}</p>
+
+        {inmueble.disponibilidad_rango && (
+          <p className={`mt-3 rounded-lg px-2.5 py-2 text-xs font-semibold ${inmueble.disponibilidad_rango.libre ? 'bg-verde-50 text-verde-800' : 'bg-rose-50 text-rose-700'}`}>
+            {inmueble.disponibilidad_rango.libre ? 'Disponible en las fechas seleccionadas' : `No disponible: ${inmueble.disponibilidad_rango.motivo}`}
+          </p>
+        )}
 
         <p className="mt-auto pt-3 text-sm">
           <span className="text-slate-500">Desde </span>

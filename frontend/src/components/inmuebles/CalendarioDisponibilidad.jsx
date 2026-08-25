@@ -59,6 +59,7 @@ export function CalendarioDisponibilidad({
         mode={modo === 'rango' ? 'range' : undefined}
         selected={modo === 'rango' ? rango : undefined}
         onSelect={modo === 'rango' ? onCambiarRango : undefined}
+        excludeDisabled
         disabled={
           modo === 'rango' ? [{ before: startOfToday() }, ...noDisponibles] : undefined
         }

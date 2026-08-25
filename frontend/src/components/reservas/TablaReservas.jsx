@@ -122,6 +122,9 @@ function etiquetaEstadoTab(estado) {
     finalizada: 'Finalizadas',
     lista_espera: 'Lista de espera',
     rechazada: 'Rechazadas',
+    fuerza_mayor_pendiente: 'Fuerza mayor',
+    fuerza_mayor_aprobada: 'Fuerza mayor aprobada',
+    fuerza_mayor_rechazada: 'Fuerza mayor rechazada',
     anulada: 'Anuladas',
   }
   return etiquetas[estado] ?? estado

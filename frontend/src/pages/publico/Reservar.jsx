@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft,
   ArrowRight,
@@ -12,7 +12,8 @@ import {
 import { getInmueble } from '../../api/inmuebles.js'
 import { crearReserva } from '../../api/reservas.js'
 import { MOTIVOS, PARENTESCOS } from '../../fixtures/tarifas.js'
-import { temporadas } from '../../fixtures/temporadas.js'
+import { getTemporadas } from '../../api/inmuebles.js'
+import { getTarifasGestion } from '../../api/administracion.js'
 import { calcularTarifa } from '../../lib/tarifas.js'
 import { aISO, fechaLarga } from '../../lib/formato.js'
 import { etiquetaTipo } from '../../fixtures/inmuebles.js'
@@ -21,6 +22,7 @@ import { CalendarioDisponibilidad } from '../../components/inmuebles/CalendarioD
 import { OcupantesForm } from '../../components/reservas/OcupantesForm.jsx'
 import { ResumenTarifa } from '../../components/reservas/ResumenTarifa.jsx'
 import { Badge } from '../../components/ui/Badge.jsx'
+import { limpiarRut, rutValido } from '../../lib/rut.js'
 import {
   Aviso,
   Boton,
@@ -73,6 +75,7 @@ function Indicador({ paso }) {
 export function Reservar() {
   const { id } = useParams()
   const navegar = useNavigate()
+  const [parametros] = useSearchParams()
   const { usuario, actor, esNoAfiliado, esPortal } = useRol()
 
   const [inmueble, setInmueble] = useState(null)
@@ -81,7 +84,11 @@ export function Reservar() {
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState(null)
 
-  const [rango, setRango] = useState(undefined)
+  const entradaInicial = parametros.get('entrada')
+  const salidaInicial = parametros.get('salida')
+  const [rango, setRango] = useState(entradaInicial && salidaInicial ? { from: new Date(`${entradaInicial}T12:00:00`), to: new Date(`${salidaInicial}T12:00:00`) } : undefined)
+  const [temporadas, setTemporadas] = useState([])
+  const [tarifasConfig, setTarifasConfig] = useState(null)
   const [motivo, setMotivo] = useState('personal')
   const [observaciones, setObservaciones] = useState('')
   const [familiares, setFamiliares] = useState([])
@@ -99,6 +106,9 @@ export function Reservar() {
       vigente = false
     }
   }, [id])
+
+  useEffect(() => { getTemporadas().then((r) => setTemporadas(r.items)) }, [])
+  useEffect(() => { getTarifasGestion().then(setTarifasConfig) }, [])
 
   /** Lista final de ocupantes: titular + familiares marcados + acompañantes. */
   const ocupantes = useMemo(() => {
@@ -145,8 +155,9 @@ export function Reservar() {
       ocupantes,
       temporadas,
       titularEsAfiliado,
+      tarifasConfig: tarifasConfig ?? undefined,
     })
-  }, [inmueble, fechaEntrada, fechaSalida, motivo, ocupantes, titularEsAfiliado])
+  }, [inmueble, fechaEntrada, fechaSalida, motivo, ocupantes, temporadas, titularEsAfiliado, tarifasConfig])
 
   if (cargando) return <Cargando texto="Preparando la solicitud…" />
 
@@ -171,10 +182,13 @@ export function Reservar() {
 
   const excedeCapacidad = ocupantes.length > inmueble.capacidad_maxima
   const acompanantesIncompletos = acompanantes.some((a) => !a.nombre.trim() || !a.rut.trim())
+  const ruts = ocupantes.map((o) => limpiarRut(o.rut))
+  const rutsInvalidos = acompanantes.some((o) => !rutValido(o.rut))
+  const rutsDuplicados = new Set(ruts).size !== ruts.length
 
   const puedeAvanzar = {
     1: Boolean(fechaEntrada && fechaSalida && tarifa?.noches > 0),
-    2: !excedeCapacidad && !acompanantesIncompletos,
+    2: !excedeCapacidad && !acompanantesIncompletos && !rutsInvalidos && !rutsDuplicados,
     3: true,
     4: true,
   }[paso]
@@ -312,6 +326,12 @@ export function Reservar() {
                       Complete el nombre y el RUT de cada acompañante registrado.
                     </Aviso>
                   </div>
+                )}
+                {(rutsInvalidos || rutsDuplicados) && (
+                  <div className="mt-4"><Aviso tono="rojo" titulo="Revise los RUT de los ocupantes">
+                    {rutsDuplicados ? 'No se puede registrar el mismo RUT más de una vez. ' : ''}
+                    {rutsInvalidos ? 'Uno o más RUT no tienen un formato o dígito verificador válido.' : ''}
+                  </Aviso></div>
                 )}
               </div>
             )}

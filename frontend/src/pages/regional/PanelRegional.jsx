@@ -41,6 +41,7 @@ export function PanelRegional() {
   const [filtro, setFiltro] = useState('todos')
   const [gestion, setGestion] = useState(null) // { reserva, accion }
   const [fundamento, setFundamento] = useState('')
+  const [detalles, setDetalles] = useState({ llaves: true, ocupantes_verificados: true, estado_inmueble: 'bueno', aseo: 'conforme', hay_incidencia: false, tipo_incidencia: 'danos', recomendacion_bloqueo: false, evidencia: null })
   const [procesando, setProcesando] = useState(false)
 
   const cargar = useCallback(() => {
@@ -84,6 +85,7 @@ export function PanelRegional() {
   const abrir = (reserva, accion) => {
     setGestion({ reserva, accion })
     setFundamento('')
+    setDetalles({ llaves: true, ocupantes_verificados: true, estado_inmueble: 'bueno', aseo: 'conforme', hay_incidencia: false, tipo_incidencia: 'danos', recomendacion_bloqueo: false, evidencia: null })
   }
 
   const ejecutar = async () => {
@@ -95,9 +97,9 @@ export function PanelRegional() {
       } else if (accion === 'rechazar') {
         await cambiarEstado(reserva.codigo, 'rechazada', { fundamento, actor })
       } else if (accion === 'check_in') {
-        await registrarEstadia(reserva.codigo, 'check_in', { observaciones: fundamento, actor })
+        await registrarEstadia(reserva.codigo, 'check_in', { observaciones: fundamento, detalles, actor })
       } else if (accion === 'check_out') {
-        await registrarEstadia(reserva.codigo, 'check_out', { observaciones: fundamento, actor })
+        await registrarEstadia(reserva.codigo, 'check_out', { observaciones: fundamento, detalles, actor })
       }
       setGestion(null)
       cargar()
@@ -267,7 +269,7 @@ export function PanelRegional() {
 
       <FiltroEstados
         reservas={reservas}
-        estados={['recibida', 'confirmada', 'en_curso', 'finalizada', 'lista_espera', 'anulada']}
+        estados={['recibida', 'confirmada', 'en_curso', 'finalizada', 'lista_espera', 'rechazada', 'anulada']}
         activo={filtro}
         onCambiar={setFiltro}
       />
@@ -317,7 +319,7 @@ export function PanelRegional() {
             <Boton
               variante={t?.variante ?? 'primario'}
               cargando={procesando}
-              disabled={t?.requerido && !fundamento.trim()}
+              disabled={(t?.requerido || detalles.hay_incidencia) && !fundamento.trim()}
               onClick={ejecutar}
             >
               {t?.boton}
@@ -373,6 +375,16 @@ export function PanelRegional() {
                 }
               />
             </Campo>
+
+            {['check_in', 'check_out'].includes(gestion.accion) && <div className="space-y-3 rounded-lg border border-arena-200 bg-arena-50 p-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Campo etiqueta="Estado del inmueble"><select value={detalles.estado_inmueble} onChange={(e) => setDetalles((d) => ({ ...d, estado_inmueble: e.target.value }))} className={clasesInput}><option value="bueno">Bueno</option><option value="con_observaciones">Con observaciones</option><option value="dano">Con daños</option></select></Campo>
+                {gestion.accion === 'check_out' && <Campo etiqueta="Estado de aseo"><select value={detalles.aseo} onChange={(e) => setDetalles((d) => ({ ...d, aseo: e.target.value }))} className={clasesInput}><option value="conforme">Conforme</option><option value="requiere_limpieza">Requiere limpieza adicional</option></select></Campo>}
+              </div>
+              <label className="flex gap-2 text-sm"><input type="checkbox" checked={detalles.llaves} onChange={(e) => setDetalles((d) => ({ ...d, llaves: e.target.checked }))} />{gestion.accion === 'check_in' ? 'Llaves entregadas' : 'Llaves devueltas'}</label>
+              {gestion.accion === 'check_in' && <label className="flex gap-2 text-sm"><input type="checkbox" checked={detalles.ocupantes_verificados} onChange={(e) => setDetalles((d) => ({ ...d, ocupantes_verificados: e.target.checked }))} />Ocupantes verificados</label>}
+              {gestion.accion === 'check_out' && <><label className="flex gap-2 text-sm font-medium text-rose-800"><input type="checkbox" checked={detalles.hay_incidencia} onChange={(e) => setDetalles((d) => ({ ...d, hay_incidencia: e.target.checked }))} />Registrar daño, no-show u otro incumplimiento</label>{detalles.hay_incidencia && <div className="space-y-3 rounded-lg bg-rose-50 p-3"><Campo etiqueta="Tipo de incidencia"><select value={detalles.tipo_incidencia} onChange={(e) => setDetalles((d) => ({ ...d, tipo_incidencia: e.target.value }))} className={clasesInput}><option value="danos">Daños o destrozos</option><option value="no_show">No presentación</option><option value="conducta">Incumplimiento de normas</option></select></Campo><Campo etiqueta="Evidencia demostrativa"><input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setDetalles((d) => ({ ...d, evidencia: e.target.files?.[0] ? { nombre: e.target.files[0].name, tipo: e.target.files[0].type } : null }))} className={clasesInput} /></Campo><label className="flex gap-2 text-sm"><input type="checkbox" checked={detalles.recomendacion_bloqueo} onChange={(e) => setDetalles((d) => ({ ...d, recomendacion_bloqueo: e.target.checked }))} />Recomendar bloqueo a Oficina Central</label></div>}</>}
+            </div>}
           </div>
         )}
       </Modal>

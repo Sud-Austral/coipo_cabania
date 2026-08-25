@@ -1,6 +1,7 @@
 import { Plus, Trash2, UserRound, Users } from 'lucide-react'
 import { PARENTESCOS } from '../../fixtures/tarifas.js'
 import { categoriaOcupante } from '../../lib/tarifas.js'
+import { formatearRut } from '../../lib/rut.js'
 import { Badge } from '../ui/Badge.jsx'
 import { Aviso, Boton, Campo, clasesInput } from '../ui/Elementos.jsx'
 
@@ -112,7 +113,7 @@ export function OcupantesForm({
       <div>
         <div className="mb-2 flex items-center justify-between gap-3">
           <h3 className="text-sm font-semibold text-slate-800">Otros acompañantes</h3>
-          <Boton variante="secundario" onClick={agregar}>
+          <Boton variante="secundario" onClick={agregar} disabled={totalOcupantes >= capacidadMaxima}>
             <Plus size={15} aria-hidden="true" />
             Agregar acompañante
           </Boton>
@@ -149,7 +150,7 @@ export function OcupantesForm({
                       <input
                         type="text"
                         value={a.rut}
-                        onChange={(e) => editar(i, 'rut', e.target.value)}
+                        onChange={(e) => editar(i, 'rut', formatearRut(e.target.value))}
                         placeholder="12.345.678-9"
                         className={`${clasesInput} tabular`}
                       />

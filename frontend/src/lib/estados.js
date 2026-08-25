@@ -27,6 +27,21 @@ export const ESTADOS = {
     clases: 'bg-rose-100 text-rose-800 border-rose-200',
     descripcion: 'La solicitud fue rechazada por la encargada regional.',
   },
+  fuerza_mayor_pendiente: {
+    etiqueta: 'Fuerza mayor en revisión',
+    clases: 'bg-violet-100 text-violet-800 border-violet-200',
+    descripcion: 'Oficina Central debe revisar el motivo y respaldo antes de determinar el cobro.',
+  },
+  fuerza_mayor_aprobada: {
+    etiqueta: 'Fuerza mayor aprobada',
+    clases: 'bg-verde-100 text-verde-800 border-verde-200',
+    descripcion: 'Oficina Central aprobó la solicitud y recalculó el cobro a un día.',
+  },
+  fuerza_mayor_rechazada: {
+    etiqueta: 'Fuerza mayor rechazada',
+    clases: 'bg-rose-100 text-rose-800 border-rose-200',
+    descripcion: 'Oficina Central rechazó la solicitud y mantuvo el cobro original.',
+  },
   en_curso: {
     etiqueta: 'En curso',
     clases: 'bg-indigo-100 text-indigo-800 border-indigo-200',
@@ -51,6 +66,9 @@ export const ORDEN_ESTADOS = [
   'finalizada',
   'lista_espera',
   'rechazada',
+  'fuerza_mayor_pendiente',
+  'fuerza_mayor_aprobada',
+  'fuerza_mayor_rechazada',
   'anulada',
 ]
 

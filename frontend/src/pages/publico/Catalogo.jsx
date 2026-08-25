@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { CalendarClock, Search, SlidersHorizontal, X } from 'lucide-react'
 import { getInmuebles } from '../../api/inmuebles.js'
 import { REGIONES, TIPOS_INMUEBLE } from '../../fixtures/inmuebles.js'
@@ -15,10 +16,11 @@ import {
   clasesInput,
 } from '../../components/ui/Elementos.jsx'
 
-const FILTROS_VACIOS = { region: '', tipo: '', capacidad_min: '', busqueda: '' }
+const FILTROS_VACIOS = { region: '', tipo: '', capacidad_min: '', busqueda: '', fecha_entrada: '', fecha_salida: '' }
 
 export function Catalogo() {
   const { esNoAfiliado } = useRol()
+  const [, setParametros] = useSearchParams()
   const [filtros, setFiltros] = useState(FILTROS_VACIOS)
   const [inmuebles, setInmuebles] = useState([])
   const [cargando, setCargando] = useState(true)
@@ -34,10 +36,20 @@ export function Catalogo() {
     }
   }, [filtros])
 
+  useEffect(() => {
+    const p = new URLSearchParams()
+    if (filtros.fecha_entrada) p.set('entrada', filtros.fecha_entrada)
+    if (filtros.fecha_salida) p.set('salida', filtros.fecha_salida)
+    setParametros(p, { replace: true })
+  }, [filtros.fecha_entrada, filtros.fecha_salida, setParametros])
+
   const hayFiltros = useMemo(
     () => Object.values(filtros).some((v) => v !== ''),
     [filtros],
   )
+  const fechasIncompletas = Boolean(filtros.fecha_entrada) !== Boolean(filtros.fecha_salida)
+  const fechasInvalidas = Boolean(filtros.fecha_entrada && filtros.fecha_salida && filtros.fecha_salida <= filtros.fecha_entrada)
+  const ordenados = useMemo(() => [...inmuebles].sort((a, b) => Number(Boolean(b.disponibilidad_rango?.libre)) - Number(Boolean(a.disponibilidad_rango?.libre))), [inmuebles])
 
   const cambiar = (campo) => (e) => setFiltros((f) => ({ ...f, [campo]: e.target.value }))
 
@@ -63,8 +75,15 @@ export function Catalogo() {
           <SlidersHorizontal size={16} className="text-verde-600" aria-hidden="true" />
           Filtrar la búsqueda
         </div>
+        {(fechasIncompletas || fechasInvalidas) && <div className="mt-3"><Aviso tono="rojo">{fechasIncompletas ? 'Seleccione ingreso y salida para consultar disponibilidad.' : 'La fecha de salida debe ser posterior al ingreso.'}</Aviso></div>}
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Campo etiqueta="Fecha de ingreso">
+            <input type="date" value={filtros.fecha_entrada} onChange={cambiar('fecha_entrada')} className={clasesInput} />
+          </Campo>
+          <Campo etiqueta="Fecha de salida">
+            <input type="date" min={filtros.fecha_entrada || undefined} value={filtros.fecha_salida} onChange={cambiar('fecha_salida')} className={clasesInput} />
+          </Campo>
           <Campo etiqueta="Región">
             <select value={filtros.region} onChange={cambiar('region')} className={clasesInput}>
               <option value="">Todas las regiones</option>
@@ -147,10 +166,10 @@ export function Catalogo() {
         />
       ) : (
         <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {inmuebles.map((inmueble) => (
+          {ordenados.map((inmueble) => (
             <li key={inmueble.id} className="flex">
               <div className="flex w-full">
-                <InmuebleCard inmueble={inmueble} esExterno={esNoAfiliado} />
+                <InmuebleCard inmueble={inmueble} esExterno={esNoAfiliado} fechas={{ entrada: filtros.fecha_entrada, salida: filtros.fecha_salida }} />
               </div>
             </li>
           ))}

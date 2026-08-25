@@ -5,6 +5,7 @@ import {
   Building2,
   CalendarDays,
   CalendarRange,
+  CalendarPlus,
   ClipboardList,
   FileSpreadsheet,
   Info,
@@ -35,15 +36,19 @@ const NAV_POR_ROL = {
   ],
   regional: [
     { a: '/regional', texto: 'Solicitudes', icono: ClipboardList },
+    { a: '/regional/reserva-manual', texto: 'Reserva manual', icono: CalendarPlus },
     { a: '/regional/calendario', texto: 'Calendario operativo', icono: CalendarDays },
   ],
   central: [
     { a: '/central', texto: 'Reservas del país', icono: ClipboardList },
+    { a: '/central/operacion', texto: 'Cobros e incidencias', icono: ShieldAlert },
     { a: '/central/descuentos', texto: 'Nómina de descuentos', icono: FileSpreadsheet },
     { a: '/central/dashboard', texto: 'Reportes', icono: BarChart3 },
     { a: '/central/sanciones', texto: 'Bloqueos y sanciones', icono: ShieldAlert },
   ],
   admin: [
+    { a: '/admin/configuracion', texto: 'Panel y configuración', icono: LayoutGrid },
+    { a: '/admin/catalogos', texto: 'Tarifas y usuarios', icono: UserRound },
     { a: '/admin/inmuebles', texto: 'Inmuebles', icono: Building2 },
     { a: '/admin/temporadas', texto: 'Temporadas', icono: CalendarRange },
     { a: '/admin/nomina', texto: 'Nómina de afiliados', icono: Upload },

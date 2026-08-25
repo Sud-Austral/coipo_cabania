@@ -8,14 +8,18 @@ import { Comprobante } from './pages/publico/Comprobante.jsx'
 import { MisReservas } from './pages/publico/MisReservas.jsx'
 import { PanelRegional } from './pages/regional/PanelRegional.jsx'
 import { CalendarioOperativo } from './pages/regional/CalendarioOperativo.jsx'
+import { ReservaManual } from './pages/regional/ReservaManual.jsx'
 import { ReservasPais } from './pages/central/ReservasPais.jsx'
 import { NominaDescuentos } from './pages/central/NominaDescuentos.jsx'
 import { Reportes } from './pages/central/Reportes.jsx'
 import { Sanciones } from './pages/central/Sanciones.jsx'
+import { OperacionCentral } from './pages/central/OperacionCentral.jsx'
 import { InmueblesAdmin } from './pages/admin/InmueblesAdmin.jsx'
 import { Temporadas } from './pages/admin/Temporadas.jsx'
 import { CargaNomina } from './pages/admin/CargaNomina.jsx'
 import { Auditoria } from './pages/admin/Auditoria.jsx'
+import { ConfiguracionAdmin } from './pages/admin/ConfiguracionAdmin.jsx'
+import { CatalogosAdmin } from './pages/admin/CatalogosAdmin.jsx'
 
 const PORTAL = ['afiliado', 'no_afiliado']
 
@@ -65,6 +69,7 @@ export default function App() {
             </RequiereRol>
           }
         />
+        <Route path="regional/reserva-manual" element={<RequiereRol roles={['regional']}><ReservaManual /></RequiereRol>} />
 
         {/* Oficina Central */}
         <Route
@@ -83,6 +88,7 @@ export default function App() {
             </RequiereRol>
           }
         />
+        <Route path="central/operacion" element={<RequiereRol roles={['central']}><OperacionCentral /></RequiereRol>} />
         <Route
           path="central/dashboard"
           element={
@@ -109,6 +115,8 @@ export default function App() {
             </RequiereRol>
           }
         />
+        <Route path="admin/configuracion" element={<RequiereRol roles={['admin']}><ConfiguracionAdmin /></RequiereRol>} />
+        <Route path="admin/catalogos" element={<RequiereRol roles={['admin']}><CatalogosAdmin /></RequiereRol>} />
         <Route
           path="admin/temporadas"
           element={

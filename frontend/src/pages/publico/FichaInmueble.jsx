@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft,
   BedDouble,
@@ -128,6 +128,8 @@ function Valoraciones({ inmuebleId }) {
 export function FichaInmueble() {
   const { id } = useParams()
   const navegar = useNavigate()
+  const [parametros] = useSearchParams()
+  const queryFechas = parametros.get('entrada') && parametros.get('salida') ? `?entrada=${parametros.get('entrada')}&salida=${parametros.get('salida')}` : ''
   const { esNoAfiliado, esPortal } = useRol()
   const [inmueble, setInmueble] = useState(null)
   const [cargando, setCargando] = useState(true)
@@ -191,7 +193,7 @@ export function FichaInmueble() {
         </div>
 
         {esPortal && (
-          <Boton onClick={() => navegar(`/inmuebles/${inmueble.id}/reservar`)}>
+          <Boton onClick={() => navegar(`/inmuebles/${inmueble.id}/reservar${queryFechas}`)}>
             <CalendarDays size={16} aria-hidden="true" />
             Solicitar reserva
           </Boton>
@@ -294,7 +296,7 @@ export function FichaInmueble() {
             {esPortal && (
               <Boton
                 className="mt-4 w-full"
-                onClick={() => navegar(`/inmuebles/${inmueble.id}/reservar`)}
+                onClick={() => navegar(`/inmuebles/${inmueble.id}/reservar${queryFechas}`)}
               >
                 Solicitar reserva
               </Boton>

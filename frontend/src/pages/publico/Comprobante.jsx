@@ -13,6 +13,7 @@ import { ESTADOS } from '../../lib/estados.js'
 import { MOTIVOS, PARENTESCOS } from '../../fixtures/tarifas.js'
 import { nombreRegion } from '../../fixtures/inmuebles.js'
 import { fechaHora, fechaLarga, pesos } from '../../lib/formato.js'
+import { contarNoches } from '../../lib/tarifas.js'
 import { BadgeEstado, Badge } from '../../components/ui/Badge.jsx'
 import { Aviso, Boton, Cargando, Tarjeta } from '../../components/ui/Elementos.jsx'
 import { ResumenTarifa } from '../../components/reservas/ResumenTarifa.jsx'
@@ -47,10 +48,10 @@ export function Comprobante() {
 
   const motivo = MOTIVOS.find((m) => m.valor === reserva.motivo)
   const tarifa = {
-    noches: reserva.ocupantes ? undefined : undefined,
+    noches: contarNoches(reserva.fecha_entrada, reserva.fecha_salida),
     lineas: reserva.detalle_tarifa ?? [],
     total: reserva.monto_total,
-    nombre_temporada: null,
+    nombre_temporada: reserva.nombre_temporada ?? null,
   }
 
   return (
@@ -69,7 +70,7 @@ export function Comprobante() {
           </Boton>
           <Boton variante="secundario" onClick={() => window.print()}>
             <Download size={15} aria-hidden="true" />
-            Descargar
+            Guardar como PDF
           </Boton>
           <Link
             to="/mis-reservas"
@@ -101,6 +102,18 @@ export function Comprobante() {
               'No hay cupo disponible en las fechas solicitadas. Si se libera un cupo, se le informará.'}
           </Aviso>
         </div>
+      )}
+
+      {reserva.estado === 'rechazada' && (
+        <div className="no-imprimir mb-5"><Aviso tono="rojo" titulo="Solicitud rechazada">
+          {reserva.fundamento || 'La encargada regional rechazó esta solicitud.'}
+        </Aviso></div>
+      )}
+
+      {reserva.estado === 'fuerza_mayor_pendiente' && (
+        <div className="no-imprimir mb-5"><Aviso tono="info" titulo="Fuerza mayor en revisión">
+          El monto mostrado es provisional. No se incorporará a descuentos hasta que Oficina Central resuelva la solicitud.
+        </Aviso></div>
       )}
 
       <Tarjeta className="overflow-hidden">
@@ -200,7 +213,7 @@ export function Comprobante() {
         {/* Cobro */}
         <div className="border-t border-arena-200 px-5 py-4">
           <h2 className="mb-2.5 text-sm font-semibold tracking-wide text-slate-500 uppercase">
-            Detalle del cobro estimado
+            {reserva.estado === 'fuerza_mayor_pendiente' ? 'Cobro provisional pendiente de resolución' : 'Detalle del cobro estimado'}
           </h2>
           {tarifa.lineas.length > 0 ? (
             <ResumenTarifa tarifa={tarifa} compacto />
@@ -213,6 +226,19 @@ export function Comprobante() {
             </p>
           )}
         </div>
+
+        {reserva.solicitud_fuerza_mayor && (
+          <div className="border-t border-violet-200 bg-violet-50/60 px-5 py-4">
+            <h2 className="mb-3 text-sm font-semibold tracking-wide text-violet-800 uppercase">Solicitud de fuerza mayor</h2>
+            <dl className="grid gap-3 text-sm md:grid-cols-2">
+              <div><dt className="text-slate-500">Motivo presentado</dt><dd className="mt-0.5 font-medium text-slate-800">{reserva.solicitud_fuerza_mayor.motivo}</dd></div>
+              <div><dt className="text-slate-500">Respaldo</dt><dd className="mt-0.5 font-medium text-slate-800">{reserva.solicitud_fuerza_mayor.respaldo?.nombre || 'Sin archivo adjunto'}</dd></div>
+              <div><dt className="text-slate-500">Fecha de solicitud</dt><dd className="mt-0.5 font-medium text-slate-800">{fechaHora(reserva.solicitud_fuerza_mayor.creada_en)}</dd></div>
+              <div><dt className="text-slate-500">Resultado</dt><dd className="mt-0.5 font-medium text-slate-800">{reserva.solicitud_fuerza_mayor.estado}</dd></div>
+            </dl>
+            {reserva.solicitud_fuerza_mayor.fundamento_resolucion && <Aviso tono={reserva.solicitud_fuerza_mayor.estado === 'aprobada' ? 'verde' : 'rojo'} titulo="Fundamento de Oficina Central">{reserva.solicitud_fuerza_mayor.fundamento_resolucion}</Aviso>}
+          </div>
+        )}
 
         {/* Observaciones y trazabilidad */}
         {reserva.observaciones && (

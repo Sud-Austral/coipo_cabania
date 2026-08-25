@@ -18,6 +18,8 @@ import {
   ultimaCargaNomina,
 } from '../fixtures/gestion.seed.js'
 import { valoracionesSeed } from '../fixtures/valoraciones.seed.js'
+import { usuarios as usuariosSeed } from '../fixtures/usuarios.js'
+import { tarifas as tarifasSeed } from '../fixtures/tarifas.js'
 
 const CLAVE = 'coipo_demo_v1'
 
@@ -32,6 +34,10 @@ function semillas() {
     auditoria: auditoriaSeed,
     carga_nomina: ultimaCargaNomina,
     valoraciones: valoracionesSeed,
+    usuarios: usuariosSeed,
+    tarifas_config: tarifasSeed,
+    cobros: [],
+    cargas_nomina: [],
   }
 }
 

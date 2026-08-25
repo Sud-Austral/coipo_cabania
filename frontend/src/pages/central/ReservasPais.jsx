@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
-import { getReservas } from '../../api/reservas.js'
+import { getReservas, resolverFuerzaMayor } from '../../api/reservas.js'
+import { useRol } from '../../context/RolContext.jsx'
+import { Modal } from '../../components/ui/Modal.jsx'
 import { REGIONES } from '../../fixtures/inmuebles.js'
 import { MOTIVOS } from '../../fixtures/tarifas.js'
 import { FiltroEstados, TablaReservas } from '../../components/reservas/TablaReservas.jsx'
 import {
   Campo,
+  Aviso,
+  Boton,
   Cargando,
   Tarjeta,
   TituloSeccion,
@@ -13,19 +17,35 @@ import {
 } from '../../components/ui/Elementos.jsx'
 
 export function ReservasPais() {
+  const { actor } = useRol()
   const [reservas, setReservas] = useState([])
   const [cargando, setCargando] = useState(true)
   const [estado, setEstado] = useState('todos')
   const [region, setRegion] = useState('')
   const [motivo, setMotivo] = useState('')
   const [busqueda, setBusqueda] = useState('')
+  const [revision, setRevision] = useState(null)
+  const [fundamento, setFundamento] = useState('')
+  const [procesando, setProcesando] = useState(false)
+
+  const cargar = () => getReservas({}).then((r) => setReservas(r.items))
 
   useEffect(() => {
     setCargando(true)
-    getReservas({})
-      .then((r) => setReservas(r.items))
+    cargar()
       .finally(() => setCargando(false))
   }, [])
+
+  const pendientesFuerzaMayor = reservas.filter((r) => r.estado === 'fuerza_mayor_pendiente')
+  const resolver = async (aprobar) => {
+    setProcesando(true)
+    try {
+      await resolverFuerzaMayor(revision.codigo, { aprobar, fundamento, actor })
+      setRevision(null)
+      setFundamento('')
+      await cargar()
+    } finally { setProcesando(false) }
+  }
 
   const visibles = useMemo(() => {
     let lista = reservas
@@ -53,6 +73,21 @@ export function ReservasPais() {
         titulo="Reservas de toda la red"
         descripcion="Acceso nacional a las reservas de las 13 regiones, para el cálculo de cobros y la revisión de casos."
       />
+
+      {pendientesFuerzaMayor.length > 0 && (
+        <Tarjeta className="mb-5 border-violet-200 p-4">
+          <h2 className="font-semibold text-violet-900">Solicitudes de fuerza mayor por revisar</h2>
+          <p className="mt-1 text-sm text-slate-600">Revise el motivo, respaldo y cobro antes de resolver.</p>
+          <div className="mt-3 space-y-2">
+            {pendientesFuerzaMayor.map((r) => (
+              <button key={r.codigo} type="button" onClick={() => { setRevision(r); setFundamento('') }} className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-violet-200 bg-violet-50 p-3 text-left hover:bg-violet-100">
+                <span><strong className="block text-sm text-violet-900">{r.codigo} · {r.titular_nombre}</strong><span className="text-xs text-slate-600">{r.inmueble?.nombre} · {r.solicitud_fuerza_mayor?.motivo}</span></span>
+                <span className="text-sm font-medium text-violet-800">Revisar</span>
+              </button>
+            ))}
+          </div>
+        </Tarjeta>
+      )}
 
       <Tarjeta className="mb-5 p-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -110,7 +145,7 @@ export function ReservasPais() {
 
       <FiltroEstados
         reservas={reservas}
-        estados={['recibida', 'confirmada', 'en_curso', 'finalizada', 'lista_espera', 'anulada']}
+        estados={['recibida', 'confirmada', 'en_curso', 'finalizada', 'lista_espera', 'fuerza_mayor_pendiente', 'fuerza_mayor_aprobada', 'fuerza_mayor_rechazada', 'anulada']}
         activo={estado}
         onCambiar={setEstado}
       />
@@ -120,6 +155,27 @@ export function ReservasPais() {
         mostrar={{ titular: true, region: true, monto: true }}
         vacio="No hay reservas que cumplan con los filtros aplicados."
       />
+
+      <Modal
+        abierto={Boolean(revision)}
+        onCerrar={() => setRevision(null)}
+        titulo="Revisar solicitud de fuerza mayor"
+        descripcion={revision ? `${revision.codigo} · ${revision.titular_nombre}` : ''}
+        focusInicial={false}
+        pie={<><Boton variante="peligro" cargando={procesando} disabled={!fundamento.trim()} onClick={() => resolver(false)}>Rechazar</Boton><Boton cargando={procesando} disabled={!fundamento.trim()} onClick={() => resolver(true)}>Aprobar y recalcular</Boton></>}
+      >
+        {revision && <div className="space-y-4">
+          <Aviso tono="info">Mientras esté pendiente, el monto mostrado es provisional y no debe enviarse a descuentos.</Aviso>
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <div><dt className="text-slate-500">Motivo declarado</dt><dd className="font-medium text-slate-800">{revision.solicitud_fuerza_mayor?.motivo}</dd></div>
+            <div><dt className="text-slate-500">Días de anticipación</dt><dd className="font-medium text-slate-800">{revision.dias_aviso}</dd></div>
+            <div><dt className="text-slate-500">Respaldo</dt><dd className="font-medium text-slate-800">{revision.solicitud_fuerza_mayor?.respaldo?.nombre || 'Sin archivo'}</dd></div>
+            <div><dt className="text-slate-500">Cobro original provisional</dt><dd className="font-medium text-slate-800">${revision.monto_total.toLocaleString('es-CL')}</dd></div>
+          </dl>
+          {revision.solicitud_fuerza_mayor?.respaldo && <Aviso tono="ambar">Respaldo demostrativo: {revision.solicitud_fuerza_mayor.respaldo.tipo || 'archivo'} · {Math.ceil(revision.solicitud_fuerza_mayor.respaldo.tamano / 1024)} KB. En la fase backend el botón abrirá el documento real.</Aviso>}
+          <Campo etiqueta="Fundamento de la decisión" requerido ayuda="Quedará visible para el afiliado y en auditoría."><textarea value={fundamento} onChange={(e) => setFundamento(e.target.value)} rows={4} className={clasesInput} /></Campo>
+        </div>}
+      </Modal>
     </>
   )
 }

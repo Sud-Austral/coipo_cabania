@@ -63,10 +63,14 @@ export function crearReserva(payload, actor) {
     ocupantes,
     observaciones,
     origen = 'portal',
+    titular = null,
   } = payload
 
   const inmueble = store.inmuebles.find((i) => i.id === Number(inmueble_id))
   if (!inmueble) return fallar(404, 'Inmueble no encontrado')
+  const rutSolicitante = titular?.rut ?? actor?.rut
+  const sancion = store.sanciones.find((s) => s.usuario_rut === rutSolicitante && s.estado === 'vigente')
+  if (sancion) return fallar(403, `Usuario bloqueado: ${sancion.motivo}. Canal de regularización: Oficina Central de Bienestar.`)
 
   if (contarNoches(fecha_entrada, fecha_salida) === 0) {
     return fallar(422, 'La fecha de salida debe ser posterior a la de entrada.')
@@ -94,6 +98,7 @@ export function crearReserva(payload, actor) {
     ocupantes,
     temporadas: store.temporadas,
     titularEsAfiliado,
+    tarifasConfig: store.tarifas_config,
   })
 
   // Sin cupo: la solicitud se registra en lista de espera (solicitud §5.1 req. 10).
@@ -104,10 +109,10 @@ export function crearReserva(payload, actor) {
     id,
     codigo: `R-2026-${String(id).padStart(4, '0')}`,
     inmueble_id: Number(inmueble_id),
-    usuario_id: actor?.id ?? null,
-    titular_nombre: actor?.nombre ?? 'Titular',
-    titular_rut: actor?.rut ?? '',
-    titular_es_afiliado: titularEsAfiliado,
+    usuario_id: titular?.id ?? actor?.id ?? null,
+    titular_nombre: titular?.nombre ?? actor?.nombre ?? 'Titular',
+    titular_rut: titular?.rut ?? actor?.rut ?? '',
+    titular_es_afiliado: titular?.afiliado_vigente ?? titularEsAfiliado,
     fecha_entrada,
     fecha_salida,
     motivo,
@@ -115,6 +120,8 @@ export function crearReserva(payload, actor) {
     monto_total: tarifa.total,
     ocupantes,
     detalle_tarifa: tarifa.lineas,
+    temporada_aplicada: tarifa.temporada,
+    nombre_temporada: tarifa.nombre_temporada,
     observaciones: observaciones ?? (disponibilidad.libre ? null : disponibilidad.motivo),
     fundamento: null,
     check_in: null,
@@ -167,7 +174,7 @@ export function cambiarEstado(codigo, nuevoEstado, { fundamento, actor } = {}) {
 }
 
 /** POST /api/reservas/{codigo}/check-in | check-out */
-export function registrarEstadia(codigo, tipo, { observaciones, actor } = {}) {
+export function registrarEstadia(codigo, tipo, { observaciones, detalles = {}, actor } = {}) {
   const reserva = store.reservas.find((r) => r.codigo === codigo)
   if (!reserva) return fallar(404, 'Reserva no encontrada')
 
@@ -189,6 +196,16 @@ export function registrarEstadia(codigo, tipo, { observaciones, actor } = {}) {
     })
   }
   if (observaciones) reserva.observaciones = observaciones
+  reserva.registro_estadia ??= {}
+  reserva.registro_estadia[tipo] = { ...detalles, observaciones, fecha: tipo === 'check_in' ? reserva.check_in : reserva.check_out, por: actor?.nombre }
+  if (detalles.hay_incidencia) {
+    reserva.incidencia = { tipo: detalles.tipo_incidencia, descripcion: observaciones, evidencia: detalles.evidencia, recomendacion_bloqueo: detalles.recomendacion_bloqueo, estado: 'informada', creada_en: ahoraISO() }
+  }
+
+  const diasAnticipacion = differenceInCalendarDays(parseISO(fecha_entrada), new Date())
+  const parametros = store.parametros ?? { anticipacion_minima: 2, anticipacion_maxima: 180 }
+  if (diasAnticipacion < parametros.anticipacion_minima) return fallar(422, `Debe reservar con al menos ${parametros.anticipacion_minima} días de anticipación.`)
+  if (diasAnticipacion > parametros.anticipacion_maxima) return fallar(422, `No puede reservar con más de ${parametros.anticipacion_maxima} días de anticipación.`)
   persistir()
 
   registrarAuditoria({
@@ -209,7 +226,7 @@ export function registrarEstadia(codigo, tipo, { observaciones, actor } = {}) {
  * POST /api/reservas/{codigo}/anular
  * Aplica la política de desistimiento según la fecha de anulación.
  */
-export function anularReserva(codigo, { fuerzaMayor = false, actor } = {}) {
+export function anularReserva(codigo, { fuerzaMayor = false, motivoFuerzaMayor = '', respaldo = null, actor } = {}) {
   const reserva = store.reservas.find((r) => r.codigo === codigo)
   if (!reserva) return fallar(404, 'Reserva no encontrada')
 
@@ -220,15 +237,22 @@ export function anularReserva(codigo, { fuerzaMayor = false, actor } = {}) {
     noches,
     diasAviso,
     fuerzaMayor,
+    diasSinCobro: store.parametros?.desistimiento_sin_cobro ?? 7,
+    diasCobroFuerzaMayor: store.parametros?.cobro_fuerza_mayor_dias ?? 1,
   })
 
-  reserva.estado = 'anulada'
-  reserva.monto_total = cobro.monto
-  reserva.observaciones = cobro.glosa
+  reserva.estado = fuerzaMayor ? 'fuerza_mayor_pendiente' : 'anulada'
+  reserva.monto_total = fuerzaMayor ? reserva.monto_total : cobro.monto
+  reserva.observaciones = fuerzaMayor
+    ? 'Solicitud de fuerza mayor pendiente de evaluación por Oficina Central.'
+    : cobro.glosa
   reserva.anulada_en = ahoraISO()
   reserva.dias_aviso = diasAviso
+  reserva.solicitud_fuerza_mayor = fuerzaMayor
+    ? { motivo: motivoFuerzaMayor, respaldo, estado: 'pendiente', creada_en: reserva.anulada_en }
+    : null
   reserva.historial_estados.push({
-    estado: 'anulada',
+    estado: reserva.estado,
     fecha: reserva.anulada_en,
     por: actor?.nombre ?? 'Usuario',
   })
@@ -239,10 +263,50 @@ export function anularReserva(codigo, { fuerzaMayor = false, actor } = {}) {
     perfil: actor?.perfil ?? 'Afiliado',
     accion: 'Anulación de reserva',
     entidad: `Reserva ${reserva.codigo}`,
-    detalle: `${diasAviso} día(s) de aviso. ${cobro.glosa}`,
+    detalle: fuerzaMayor
+      ? `${diasAviso} día(s) de aviso. Fuerza mayor solicitada: ${motivoFuerzaMayor}`
+      : `${diasAviso} día(s) de aviso. ${cobro.glosa}`,
   })
 
   return responder({ reserva, cobro })
+}
+
+/** PATCH /api/reservas/{codigo}/fuerza-mayor — decisión de Oficina Central. */
+export function resolverFuerzaMayor(codigo, { aprobar, fundamento, actor } = {}) {
+  const reserva = store.reservas.find((r) => r.codigo === codigo)
+  if (!reserva?.solicitud_fuerza_mayor) return fallar(404, 'Solicitud de fuerza mayor no encontrada')
+  const noches = contarNoches(reserva.fecha_entrada, reserva.fecha_salida)
+  const montoOriginal = reserva.monto_total
+  const montoResuelto = aprobar && noches > 0 ? Math.round(montoOriginal / noches) : montoOriginal
+  if (aprobar) {
+    reserva.detalle_tarifa_original = reserva.detalle_tarifa
+    reserva.detalle_tarifa = [{
+      concepto: 'Fuerza mayor aprobada · un día por gastos de limpieza',
+      cantidad: 1,
+      detalle_cantidad: '1 día',
+      valor_unitario: montoResuelto,
+      subtotal: montoResuelto,
+    }]
+  }
+  reserva.estado = aprobar ? 'fuerza_mayor_aprobada' : 'fuerza_mayor_rechazada'
+  reserva.monto_total = montoResuelto
+  reserva.solicitud_fuerza_mayor = {
+    ...reserva.solicitud_fuerza_mayor,
+    estado: aprobar ? 'aprobada' : 'rechazada',
+    fundamento_resolucion: fundamento,
+    resuelta_en: ahoraISO(),
+    resuelta_por: actor?.nombre ?? 'Oficina Central',
+    monto_original: montoOriginal,
+    monto_resuelto: montoResuelto,
+  }
+  reserva.historial_estados.push({ estado: reserva.estado, fecha: ahoraISO(), por: actor?.nombre ?? 'Oficina Central' })
+  persistir()
+  registrarAuditoria({
+    usuario: actor?.nombre ?? 'Oficina Central', perfil: actor?.perfil ?? 'Oficina Central',
+    accion: aprobar ? 'Fuerza mayor aprobada' : 'Fuerza mayor rechazada',
+    entidad: `Reserva ${codigo}`, detalle: fundamento,
+  })
+  return responder(reserva)
 }
 
 /** GET /api/reservas/simular-tarifa — usada por el asistente de reserva. */
@@ -264,6 +328,7 @@ export function simularTarifa({
     ocupantes,
     temporadas: store.temporadas,
     titularEsAfiliado,
+    tarifasConfig: store.tarifas_config,
   })
   return responder(tarifa)
 }

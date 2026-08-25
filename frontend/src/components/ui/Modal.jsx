@@ -12,18 +12,23 @@ export function Modal({
   focusInicial = true,
 }) {
   const contenedor = useRef(null)
+  const onCerrarRef = useRef(onCerrar)
+
+  useEffect(() => {
+    onCerrarRef.current = onCerrar
+  }, [onCerrar])
 
   useEffect(() => {
     if (!abierto) return
     const alPresionar = (e) => {
-      if (e.key === 'Escape') onCerrar()
+      if (e.key === 'Escape') onCerrarRef.current()
     }
     document.addEventListener('keydown', alPresionar)
     if (focusInicial) {
       contenedor.current?.focus()
     }
     return () => document.removeEventListener('keydown', alPresionar)
-  }, [abierto, onCerrar, focusInicial])
+  }, [abierto, focusInicial])
 
   if (!abierto) return null
 

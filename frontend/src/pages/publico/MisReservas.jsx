@@ -38,6 +38,10 @@ export function MisReservas() {
   const [comentario, setComentario] = useState('')
   const [guardando, setGuardando] = useState(false)
   const [errorValoracion, setErrorValoracion] = useState(null)
+  const [solicitaFuerzaMayor, setSolicitaFuerzaMayor] = useState(false)
+  const [motivoFuerzaMayor, setMotivoFuerzaMayor] = useState('')
+  const [respaldo, setRespaldo] = useState(null)
+  const [errorRespaldo, setErrorRespaldo] = useState('')
 
   const cargar = useCallback(() => {
     setCargando(true)
@@ -104,12 +108,36 @@ export function MisReservas() {
   const confirmarAnulacion = async () => {
     setAnulando(true)
     try {
-      await anularReserva(porAnular.codigo, { actor })
+      await anularReserva(porAnular.codigo, {
+        fuerzaMayor: solicitaFuerzaMayor,
+        motivoFuerzaMayor,
+        respaldo: respaldo
+          ? { nombre: respaldo.name, tamano: respaldo.size, tipo: respaldo.type }
+          : null,
+        actor,
+      })
       setPorAnular(null)
+      setSolicitaFuerzaMayor(false)
+      setMotivoFuerzaMayor('')
+      setRespaldo(null)
       cargar()
     } finally {
       setAnulando(false)
     }
+  }
+
+  const elegirRespaldo = (archivo) => {
+    setErrorRespaldo('')
+    if (!archivo) return setRespaldo(null)
+    if (!['application/pdf', 'image/jpeg', 'image/png'].includes(archivo.type)) {
+      setRespaldo(null)
+      return setErrorRespaldo('Formato no permitido. Use PDF, JPG o PNG.')
+    }
+    if (archivo.size > 2 * 1024 * 1024) {
+      setRespaldo(null)
+      return setErrorRespaldo('El archivo supera el máximo de 2 MB.')
+    }
+    setRespaldo(archivo)
   }
 
   if (cargando) return <Cargando texto="Cargando sus reservas…" />
@@ -149,7 +177,7 @@ export function MisReservas() {
 
       <FiltroEstados
         reservas={reservas}
-        estados={['recibida', 'confirmada', 'en_curso', 'finalizada', 'anulada']}
+        estados={['recibida', 'confirmada', 'lista_espera', 'rechazada', 'fuerza_mayor_pendiente', 'fuerza_mayor_aprobada', 'fuerza_mayor_rechazada', 'en_curso', 'finalizada', 'anulada']}
         activo={filtro}
         onCambiar={setFiltro}
       />
@@ -191,7 +219,12 @@ export function MisReservas() {
             <Boton variante="neutro" onClick={() => setPorAnular(null)}>
               Mantener la reserva
             </Boton>
-            <Boton variante="peligro" cargando={anulando} onClick={confirmarAnulacion}>
+            <Boton
+              variante="peligro"
+              cargando={anulando}
+              disabled={solicitaFuerzaMayor && !motivoFuerzaMayor.trim()}
+              onClick={confirmarAnulacion}
+            >
               Confirmar desistimiento
             </Boton>
           </>
@@ -219,6 +252,45 @@ export function MisReservas() {
                 {pesos(cobroEstimado.monto)}
               </span>
             </div>
+
+            <label className="flex items-start gap-2 rounded-lg border border-arena-200 p-3 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={solicitaFuerzaMayor}
+                onChange={(e) => setSolicitaFuerzaMayor(e.target.checked)}
+                className="mt-0.5"
+              />
+              Solicitar evaluación por fuerza mayor
+            </label>
+
+            {solicitaFuerzaMayor && (
+              <div className="space-y-3 rounded-lg bg-violet-50 p-3">
+                <Campo etiqueta="Motivo de fuerza mayor" requerido>
+                  <textarea
+                    value={motivoFuerzaMayor}
+                    onChange={(e) => setMotivoFuerzaMayor(e.target.value)}
+                    rows={3}
+                    className={clasesInput}
+                  />
+                </Campo>
+                <Campo
+                  etiqueta="Documento de respaldo (demostrativo)"
+                  ayuda="La maqueta guarda el nombre del archivo, no su contenido."
+                >
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                    onChange={(e) => elegirRespaldo(e.target.files?.[0] ?? null)}
+                    className={clasesInput}
+                  />
+                </Campo>
+                {respaldo && <Aviso tono="verde">Archivo seleccionado: {respaldo.name} · {Math.ceil(respaldo.size / 1024)} KB</Aviso>}
+                {errorRespaldo && <Aviso tono="rojo">{errorRespaldo}</Aviso>}
+                <Aviso tono="info">
+                  El cobro quedará pendiente hasta que Oficina Central revise la solicitud.
+                </Aviso>
+              </div>
+            )}
 
             <p className="text-xs text-slate-500">
               Política vigente: la anulación debe avisarse con al menos{' '}

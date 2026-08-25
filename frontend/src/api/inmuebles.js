@@ -18,8 +18,9 @@ const conValoracion = (inmueble) => ({
 
 /** GET /api/inmuebles?region=&tipo=&capacidad_min=&busqueda= */
 export function getInmuebles(filtros = {}) {
-  const { region, tipo, capacidad_min, localidad, busqueda } = filtros
+  const { region, tipo, capacidad_min, localidad, busqueda, fecha_entrada, fecha_salida } = filtros
   let items = store.inmuebles
+  items = items.filter((i) => i.activo !== false)
 
   if (region) items = items.filter((i) => i.region === region)
   if (tipo) items = items.filter((i) => i.tipo === tipo)
@@ -35,7 +36,13 @@ export function getInmuebles(filtros = {}) {
     )
   }
 
-  return responder(lista(items.map(conValoracion)))
+  return responder(lista(items.map((item) => ({
+    ...conValoracion(item),
+    disponibilidad_rango:
+      fecha_entrada && fecha_salida
+        ? rangoDisponible(item.id, fecha_entrada, fecha_salida)
+        : null,
+  }))))
 }
 
 /** GET /api/inmuebles/{id} */

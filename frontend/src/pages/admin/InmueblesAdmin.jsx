@@ -1,297 +1,31 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Camera, Check, ExternalLink, Pencil, Search } from 'lucide-react'
-import { actualizarInmueble, getInmuebles } from '../../api/inmuebles.js'
+import { ExternalLink, Pencil, Plus, Power, Search } from 'lucide-react'
+import { actualizarInmueble } from '../../api/inmuebles.js'
+import { cambiarEstadoInmueble, crearInmueble, getInmueblesAdmin, guardarContenidoInmueble } from '../../api/administracion.js'
 import { REGIONES, TIPOS_INMUEBLE, etiquetaTipo, nombreRegion } from '../../fixtures/inmuebles.js'
-import { rutaFoto } from '../../components/inmuebles/fotos.js'
 import { useRol } from '../../context/RolContext.jsx'
 import { Badge } from '../../components/ui/Badge.jsx'
 import { Modal } from '../../components/ui/Modal.jsx'
 import { Tabla, Encabezado, Cuerpo, Fila, Celda } from '../../components/ui/Tabla.jsx'
-import {
-  Aviso,
-  Boton,
-  Campo,
-  Cargando,
-  Tarjeta,
-  TituloSeccion,
-  clasesInput,
-} from '../../components/ui/Elementos.jsx'
+import { Aviso, Boton, Campo, Cargando, Tarjeta, TituloSeccion, clasesInput } from '../../components/ui/Elementos.jsx'
+
+const vacio = { nombre:'', tipo:'huespedes', region:'13', localidad:'', direccion:'', capacidad_maxima:1, dormitorios:1, descripcion:'', equipamiento:'', fotosTexto:'', zonasTexto:'' }
+const aFormulario = (i) => ({ ...i, equipamiento:(i.equipamiento||[]).join(', '), fotosTexto:(i.fotos||[]).join('\n'), zonasTexto:(i.zonas_interes||[]).map((z)=>typeof z==='string'?z:z.nombre).join('\n') })
 
 export function InmueblesAdmin() {
-  const { actor } = useRol()
-  const [inmuebles, setInmuebles] = useState([])
-  const [cargando, setCargando] = useState(true)
-  const [busqueda, setBusqueda] = useState('')
-  const [editando, setEditando] = useState(null)
-  const [guardando, setGuardando] = useState(false)
-  const [aviso, setAviso] = useState(null)
-
-  const cargar = useCallback(() => {
-    setCargando(true)
-    getInmuebles({ busqueda })
-      .then((r) => setInmuebles(r.items))
-      .finally(() => setCargando(false))
-  }, [busqueda])
-
-  useEffect(() => {
-    cargar()
-  }, [cargar])
-
-  const guardar = async () => {
-    setGuardando(true)
-    try {
-      await actualizarInmueble(
-        editando.id,
-        {
-          nombre: editando.nombre,
-          tipo: editando.tipo,
-          localidad: editando.localidad,
-          direccion: editando.direccion,
-          capacidad_maxima: Number(editando.capacidad_maxima),
-          dormitorios: Number(editando.dormitorios),
-          descripcion: editando.descripcion,
-          equipamiento: editando.equipamiento
-            .split(',')
-            .map((e) => e.trim())
-            .filter(Boolean),
-        },
-        actor,
-      )
-      setAviso(`Se guardaron los cambios de «${editando.nombre}».`)
-      setEditando(null)
-      cargar()
-    } finally {
-      setGuardando(false)
-    }
-  }
-
-  const abrir = (i) =>
-    setEditando({ ...i, equipamiento: i.equipamiento.join(', ') })
-
-  if (cargando && !inmuebles.length) return <Cargando texto="Cargando los inmuebles…" />
-
-  return (
-    <>
-      <TituloSeccion
-        titulo="Mantención de inmuebles"
-        descripcion="Administración del catálogo: datos, capacidad, equipamiento y contenidos de las fichas de los 34 inmuebles de la red."
-      />
-
-      {aviso && (
-        <div className="mb-5">
-          <Aviso tono="verde" icono={Check} titulo="Cambios guardados">
-            {aviso} Los cambios se reflejan de inmediato en el catálogo público.
-          </Aviso>
-        </div>
-      )}
-
-      <Tarjeta className="mb-5 p-4">
-        <Campo etiqueta="Buscar inmueble" className="max-w-md">
-          <div className="relative">
-            <Search
-              size={16}
-              className="absolute top-1/2 left-3 -translate-y-1/2 text-slate-400"
-              aria-hidden="true"
-            />
-            <input
-              type="search"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Nombre o localidad"
-              className={`${clasesInput} pl-9`}
-            />
-          </div>
-        </Campo>
-        <p className="mt-3 border-t border-arena-200 pt-3 text-sm text-slate-600">
-          {inmuebles.length} inmuebles
-        </p>
-      </Tarjeta>
-
-      <Tabla>
-        <Encabezado
-          columnas={[
-            { clave: 'foto', titulo: 'Foto' },
-            { clave: 'nombre', titulo: 'Inmueble' },
-            { clave: 'region', titulo: 'Región' },
-            { clave: 'tipo', titulo: 'Tipo' },
-            { clave: 'cap', titulo: 'Capacidad', alineacion: 'derecha' },
-            { clave: 'ficha', titulo: 'Ficha' },
-            { clave: 'acciones', titulo: '' },
-          ]}
-        />
-        <Cuerpo>
-          {inmuebles.map((i) => (
-            <Fila key={i.id}>
-              <Celda>
-                <img
-                  src={rutaFoto(i.fotos?.[0])}
-                  alt=""
-                  loading="lazy"
-                  className="h-11 w-16 rounded-md object-cover"
-                />
-              </Celda>
-              <Celda>
-                <span className="block font-medium text-slate-800">{i.nombre}</span>
-                <span className="block text-xs text-slate-500">{i.localidad}</span>
-              </Celda>
-              <Celda className="text-slate-600">{nombreRegion(i.region)}</Celda>
-              <Celda>
-                <Badge tono={i.tipo === 'veraneo' ? 'verde' : 'azul'}>
-                  {etiquetaTipo(i.tipo)}
-                </Badge>
-              </Celda>
-              <Celda numerica>{i.capacidad_maxima}</Celda>
-              <Celda>
-                <span className="flex items-center gap-1.5 text-xs text-slate-600">
-                  <Camera size={13} aria-hidden="true" />
-                  {i.fotos?.length ?? 0} fotos · {i.zonas_interes?.length ?? 0} zonas
-                </span>
-              </Celda>
-              <Celda>
-                <div className="flex justify-end gap-1.5">
-                  <Link
-                    to={`/inmuebles/${i.id}`}
-                    className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-arena-200 px-3 text-sm text-slate-700 hover:bg-arena-50"
-                  >
-                    <ExternalLink size={14} aria-hidden="true" />
-                    Ver ficha
-                  </Link>
-                  <Boton variante="secundario" onClick={() => abrir(i)}>
-                    <Pencil size={14} aria-hidden="true" />
-                    Editar
-                  </Boton>
-                </div>
-              </Celda>
-            </Fila>
-          ))}
-        </Cuerpo>
-      </Tabla>
-
-      <Modal
-        abierto={Boolean(editando)}
-        onCerrar={() => setEditando(null)}
-        titulo="Editar inmueble"
-        descripcion={editando?.nombre}
-        pie={
-          <>
-            <Boton variante="neutro" onClick={() => setEditando(null)}>
-              Cancelar
-            </Boton>
-            <Boton cargando={guardando} onClick={guardar}>
-              Guardar cambios
-            </Boton>
-          </>
-        }
-      >
-        {editando && (
-          <div className="space-y-3">
-            <Campo etiqueta="Nombre" requerido>
-              <input
-                type="text"
-                value={editando.nombre}
-                onChange={(e) => setEditando((i) => ({ ...i, nombre: e.target.value }))}
-                className={clasesInput}
-              />
-            </Campo>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Campo etiqueta="Tipo de inmueble">
-                <select
-                  value={editando.tipo}
-                  onChange={(e) => setEditando((i) => ({ ...i, tipo: e.target.value }))}
-                  className={clasesInput}
-                >
-                  {TIPOS_INMUEBLE.map((t) => (
-                    <option key={t.valor} value={t.valor}>
-                      {t.etiqueta}
-                    </option>
-                  ))}
-                </select>
-              </Campo>
-              <Campo etiqueta="Región" ayuda="La región no se modifica en la maqueta.">
-                <select value={editando.region} disabled className={clasesInput}>
-                  {REGIONES.map((r) => (
-                    <option key={r.codigo} value={r.codigo}>
-                      {r.nombre}
-                    </option>
-                  ))}
-                </select>
-              </Campo>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Campo etiqueta="Localidad">
-                <input
-                  type="text"
-                  value={editando.localidad}
-                  onChange={(e) => setEditando((i) => ({ ...i, localidad: e.target.value }))}
-                  className={clasesInput}
-                />
-              </Campo>
-              <Campo etiqueta="Dirección">
-                <input
-                  type="text"
-                  value={editando.direccion}
-                  onChange={(e) => setEditando((i) => ({ ...i, direccion: e.target.value }))}
-                  className={clasesInput}
-                />
-              </Campo>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Campo
-                etiqueta="Capacidad máxima"
-                ayuda="El sistema impide reservas que la excedan."
-              >
-                <input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={editando.capacidad_maxima}
-                  onChange={(e) =>
-                    setEditando((i) => ({ ...i, capacidad_maxima: e.target.value }))
-                  }
-                  className={`${clasesInput} tabular`}
-                />
-              </Campo>
-              <Campo etiqueta="Dormitorios">
-                <input
-                  type="number"
-                  min={1}
-                  max={12}
-                  value={editando.dormitorios}
-                  onChange={(e) => setEditando((i) => ({ ...i, dormitorios: e.target.value }))}
-                  className={`${clasesInput} tabular`}
-                />
-              </Campo>
-            </div>
-
-            <Campo etiqueta="Descripción">
-              <textarea
-                rows={4}
-                value={editando.descripcion}
-                onChange={(e) => setEditando((i) => ({ ...i, descripcion: e.target.value }))}
-                className={clasesInput}
-              />
-            </Campo>
-
-            <Campo etiqueta="Equipamiento" ayuda="Separado por comas.">
-              <input
-                type="text"
-                value={editando.equipamiento}
-                onChange={(e) => setEditando((i) => ({ ...i, equipamiento: e.target.value }))}
-                className={clasesInput}
-              />
-            </Campo>
-
-            <Aviso tono="info">
-              La carga de fotografías y zonas de interés se hará en el sistema definitivo. En la
-              maqueta se muestran imágenes de referencia.
-            </Aviso>
-          </div>
-        )}
-      </Modal>
-    </>
-  )
+  const { actor } = useRol(); const [items,setItems]=useState([]); const [busqueda,setBusqueda]=useState(''); const [editando,setEditando]=useState(null); const [cargando,setCargando]=useState(true); const [aviso,setAviso]=useState(''); const [error,setError]=useState('')
+  const cargar=useCallback(()=>{ setCargando(true); getInmueblesAdmin().then((r)=>setItems(r.items)).finally(()=>setCargando(false)) },[])
+  useEffect(()=>{cargar()},[cargar])
+  const visibles=items.filter((i)=>`${i.nombre} ${i.localidad}`.toLowerCase().includes(busqueda.toLowerCase()))
+  const guardar=async()=>{ setError(''); if(!editando.nombre.trim()||!editando.localidad.trim()) return setError('Nombre y localidad son obligatorios.'); try { const datos={...editando,capacidad_maxima:Number(editando.capacidad_maxima),dormitorios:Number(editando.dormitorios),equipamiento:editando.equipamiento.split(',').map((x)=>x.trim()).filter(Boolean)}; let item; if(editando.id) item=await actualizarInmueble(editando.id,datos,actor); else item=await crearInmueble(datos,actor); const fotos=editando.fotosTexto.split('\n').map((x)=>x.trim()).filter(Boolean); const zonas_interes=editando.zonasTexto.split('\n').map((nombre)=>({nombre})); await guardarContenidoInmueble(item.id,{fotos,zonas_interes},actor); setAviso(`${editando.id?'Actualizado':'Creado'}: ${editando.nombre}.`); setEditando(null); cargar() } catch(e){setError(e.message)} }
+  const alternar=async(i)=>{ setError(''); try{await cambiarEstadoInmueble(i.id,i.activo===false,actor); setAviso(`${i.nombre} quedó ${i.activo===false?'activo':'inactivo'}.`); cargar()}catch(e){setError(e.detail||e.message)} }
+  if(cargando&&!items.length) return <Cargando texto="Cargando inmuebles…" />
+  return <><TituloSeccion titulo="Mantención de inmuebles" descripcion="Cree, edite, active o desactive inmuebles. Los cambios se guardan y se reflejan en el catálogo." />
+    {aviso&&<div className="mb-4"><Aviso tono="verde">{aviso}</Aviso></div>}{error&&!editando&&<div className="mb-4"><Aviso tono="rojo">{error}</Aviso></div>}
+    <Tarjeta className="mb-5 flex flex-wrap items-end gap-3 p-4"><Campo etiqueta="Buscar" className="min-w-64 flex-1"><div className="relative"><Search size={16} className="absolute left-3 top-3.5 text-slate-400"/><input value={busqueda} onChange={(e)=>setBusqueda(e.target.value)} className={`${clasesInput} pl-9`} /></div></Campo><Boton onClick={()=>{setError('');setEditando({...vacio})}}><Plus size={16}/>Crear inmueble</Boton></Tarjeta>
+    <Tabla><Encabezado columnas={[{clave:'nombre',titulo:'Inmueble'},{clave:'region',titulo:'Región'},{clave:'tipo',titulo:'Tipo'},{clave:'cap',titulo:'Capacidad'},{clave:'estado',titulo:'Estado'},{clave:'acciones',titulo:''}]}/><Cuerpo>{visibles.map((i)=><Fila key={i.id}><Celda><strong>{i.nombre}</strong><span className="block text-xs text-slate-500">{i.localidad} · {(i.fotos||[]).length} fotos · {(i.zonas_interes||[]).length} zonas</span></Celda><Celda>{nombreRegion(i.region)}</Celda><Celda><Badge tono="azul">{etiquetaTipo(i.tipo)}</Badge></Celda><Celda>{i.capacidad_maxima}</Celda><Celda><Badge tono={i.activo===false?'neutro':'verde'}>{i.activo===false?'Inactivo':'Activo'}</Badge></Celda><Celda><div className="flex justify-end gap-2"><Link to={`/inmuebles/${i.id}`} className="inline-flex min-h-11 items-center gap-1 rounded-lg border px-3 text-sm"><ExternalLink size={14}/>Ficha</Link><Boton variante="secundario" onClick={()=>{setError('');setEditando(aFormulario(i))}}><Pencil size={14}/>Editar</Boton><Boton variante="neutro" onClick={()=>alternar(i)}><Power size={14}/>{i.activo===false?'Activar':'Desactivar'}</Boton></div></Celda></Fila>)}</Cuerpo></Tabla>
+    <Modal abierto={Boolean(editando)} onCerrar={()=>setEditando(null)} titulo={editando?.id?'Editar inmueble':'Crear inmueble'} pie={<><Boton variante="neutro" onClick={()=>setEditando(null)}>Cancelar</Boton><Boton onClick={guardar}>Guardar</Boton></>}>
+      {editando&&<div className="space-y-3">{error&&<Aviso tono="rojo">{error}</Aviso>}<Campo etiqueta="Nombre" requerido><input value={editando.nombre} onChange={(e)=>setEditando({...editando,nombre:e.target.value})} className={clasesInput}/></Campo><div className="grid gap-3 sm:grid-cols-2"><Campo etiqueta="Tipo"><select value={editando.tipo} onChange={(e)=>setEditando({...editando,tipo:e.target.value})} className={clasesInput}>{TIPOS_INMUEBLE.map((t)=><option key={t.valor} value={t.valor}>{t.etiqueta}</option>)}</select></Campo><Campo etiqueta="Región"><select value={editando.region} onChange={(e)=>setEditando({...editando,region:e.target.value})} className={clasesInput}>{REGIONES.map((r)=><option key={r.codigo} value={r.codigo}>{r.nombre}</option>)}</select></Campo></div><div className="grid gap-3 sm:grid-cols-2"><Campo etiqueta="Localidad" requerido><input value={editando.localidad} onChange={(e)=>setEditando({...editando,localidad:e.target.value})} className={clasesInput}/></Campo><Campo etiqueta="Dirección"><input value={editando.direccion} onChange={(e)=>setEditando({...editando,direccion:e.target.value})} className={clasesInput}/></Campo><Campo etiqueta="Capacidad"><input type="number" min="1" value={editando.capacidad_maxima} onChange={(e)=>setEditando({...editando,capacidad_maxima:e.target.value})} className={clasesInput}/></Campo><Campo etiqueta="Dormitorios"><input type="number" min="0" value={editando.dormitorios} onChange={(e)=>setEditando({...editando,dormitorios:e.target.value})} className={clasesInput}/></Campo></div><Campo etiqueta="Descripción"><textarea rows="3" value={editando.descripcion} onChange={(e)=>setEditando({...editando,descripcion:e.target.value})} className={clasesInput}/></Campo><Campo etiqueta="Equipamiento" ayuda="Separado por comas"><input value={editando.equipamiento} onChange={(e)=>setEditando({...editando,equipamiento:e.target.value})} className={clasesInput}/></Campo><Campo etiqueta="Fotos" ayuda="Una ruta o URL por línea"><textarea rows="3" value={editando.fotosTexto} onChange={(e)=>setEditando({...editando,fotosTexto:e.target.value})} className={clasesInput}/></Campo><Campo etiqueta="Zonas de interés" ayuda="Una zona por línea"><textarea rows="3" value={editando.zonasTexto} onChange={(e)=>setEditando({...editando,zonasTexto:e.target.value})} className={clasesInput}/></Campo></div>}
+    </Modal></>
 }
