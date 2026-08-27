@@ -53,7 +53,15 @@ export function levantarSancion(id, fundamento, actor) {
 
 /** GET /api/nominas-descuento */
 export function getNominas() {
-  return responder(lista(store.nominas))
+  const nominasVisibles = store.nominas.map((nomina) => ({
+    ...nomina,
+    items: nomina.items.filter((item) => {
+      if (item.excluido_por_pago_transferencia) return false
+      const reserva = store.reservas.find((r) => r.codigo === item.reserva_codigo)
+      return reserva?.pago_transferencia?.estado !== 'confirmado'
+    }),
+  }))
+  return responder(lista(nominasVisibles))
 }
 
 /** PATCH /api/nominas-descuento/{periodo} — marca el estado de los cobros */

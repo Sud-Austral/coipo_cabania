@@ -187,8 +187,49 @@ export function registrarEstadia(codigo, tipo, { observaciones, actor } = {}) {
       fecha: reserva.check_out,
       por: actor?.nombre ?? 'Encargada regional',
     })
+
+    // Al finalizar una estadía de un afiliado, el cobro queda disponible para
+    // la nómina de descuento del mes. Si posteriormente se confirma un pago
+    // total por transferencia, se excluirá automáticamente de esta nómina.
+    if (reserva.titular_es_afiliado && reserva.monto_total > 0) {
+      const periodo = reserva.check_out.slice(0, 7)
+      let nomina = store.nominas.find((n) => n.periodo === periodo)
+      if (!nomina) {
+        const [anio, mes] = periodo.split('-')
+        const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+        nomina = {
+          periodo,
+          etiqueta: `${meses[Number(mes) - 1]} ${anio}`.replace(/^./, (c) => c.toUpperCase()),
+          estado_general: 'abierto',
+          items: [],
+        }
+        store.nominas.unshift(nomina)
+      }
+      if (!nomina.items.some((item) => item.reserva_codigo === reserva.codigo)) {
+        nomina.items.push({
+          reserva_codigo: reserva.codigo,
+          rut: reserva.titular_rut,
+          nombre: reserva.titular_nombre,
+          inmueble: store.inmuebles.find((i) => i.id === reserva.inmueble_id)?.nombre ?? '—',
+          noches: contarNoches(reserva.fecha_entrada, reserva.fecha_salida),
+          monto: reserva.monto_total,
+          estado: 'pendiente',
+        })
+      }
+    }
   }
   if (observaciones) reserva.observaciones = observaciones
+<<<<<<< Updated upstream
+=======
+  reserva.registro_estadia ??= {}
+  reserva.registro_estadia[tipo] = { ...detalles, observaciones, fecha: tipo === 'check_in' ? reserva.check_in : reserva.check_out, por: actor?.nombre }
+  if (detalles.hay_incidencia) {
+    reserva.incidencia = { tipo: detalles.tipo_incidencia, descripcion: observaciones, evidencia: detalles.evidencia, recomendacion_bloqueo: detalles.recomendacion_bloqueo, estado: 'informada', creada_en: ahoraISO() }
+  }
+
+  // La anticipación se valida al crear la reserva. En check-in/check-out no se vuelve
+  // a aplicar esa regla porque la estadía ya existe y puede estar en curso o finalizada.
+>>>>>>> Stashed changes
   persistir()
 
   registrarAuditoria({
@@ -245,6 +286,146 @@ export function anularReserva(codigo, { fuerzaMayor = false, actor } = {}) {
   return responder({ reserva, cobro })
 }
 
+<<<<<<< Updated upstream
+=======
+/** PATCH /api/reservas/{codigo}/fuerza-mayor — decisión de Oficina Central. */
+export function resolverFuerzaMayor(codigo, { aprobar, fundamento, actor } = {}) {
+  const reserva = store.reservas.find((r) => r.codigo === codigo)
+  if (!reserva?.solicitud_fuerza_mayor) return fallar(404, 'Solicitud de fuerza mayor no encontrada')
+  const noches = contarNoches(reserva.fecha_entrada, reserva.fecha_salida)
+  const montoOriginal = reserva.monto_total
+  const montoResuelto = aprobar && noches > 0 ? Math.round(montoOriginal / noches) : montoOriginal
+  if (aprobar) {
+    reserva.detalle_tarifa_original = reserva.detalle_tarifa
+    reserva.detalle_tarifa = [{
+      concepto: 'Fuerza mayor aprobada · un día por gastos de limpieza',
+      cantidad: 1,
+      detalle_cantidad: '1 día',
+      valor_unitario: montoResuelto,
+      subtotal: montoResuelto,
+    }]
+  }
+  reserva.estado = aprobar ? 'fuerza_mayor_aprobada' : 'fuerza_mayor_rechazada'
+  reserva.monto_total = montoResuelto
+  reserva.solicitud_fuerza_mayor = {
+    ...reserva.solicitud_fuerza_mayor,
+    estado: aprobar ? 'aprobada' : 'rechazada',
+    fundamento_resolucion: fundamento,
+    resuelta_en: ahoraISO(),
+    resuelta_por: actor?.nombre ?? 'Oficina Central',
+    monto_original: montoOriginal,
+    monto_resuelto: montoResuelto,
+  }
+  reserva.historial_estados.push({ estado: reserva.estado, fecha: ahoraISO(), por: actor?.nombre ?? 'Oficina Central' })
+  persistir()
+  registrarAuditoria({
+    usuario: actor?.nombre ?? 'Oficina Central', perfil: actor?.perfil ?? 'Oficina Central',
+    accion: aprobar ? 'Fuerza mayor aprobada' : 'Fuerza mayor rechazada',
+    entidad: `Reserva ${codigo}`, detalle: fundamento,
+  })
+  return responder(reserva)
+}
+
+
+
+/** GET /api/pagos/transferencia/datos — datos bancarios mostrados al usuario. */
+export function getDatosTransferencia() {
+  return responder(store.datos_transferencia)
+}
+
+/**
+ * POST /api/reservas/{codigo}/pago-transferencia
+ * El titular informa que realizó una transferencia por el total de la reserva.
+ */
+export function informarPagoTransferencia(codigo, { comprobante = null, actor } = {}) {
+  const reserva = store.reservas.find((r) => r.codigo === codigo)
+  if (!reserva) return fallar(404, 'Reserva no encontrada')
+  if (reserva.estado !== 'finalizada') {
+    return fallar(422, 'El pago por transferencia se habilita después de realizar el check-out.')
+  }
+  if (reserva.monto_total <= 0) return fallar(422, 'La reserva no tiene un monto pendiente de pago.')
+  if (reserva.pago_transferencia?.estado === 'confirmado') {
+    return fallar(409, 'Esta reserva ya fue confirmada como pagada por transferencia.')
+  }
+
+  reserva.pago_transferencia = {
+    estado: 'informado',
+    monto: reserva.monto_total,
+    informado_en: ahoraISO(),
+    informado_por: actor?.nombre ?? reserva.titular_nombre ?? 'Titular',
+    comprobante,
+    confirmado_en: null,
+    confirmado_por: null,
+  }
+  persistir()
+  registrarAuditoria({
+    usuario: actor?.nombre ?? reserva.titular_nombre ?? 'Titular',
+    perfil: actor?.perfil ?? (reserva.titular_es_afiliado ? 'Afiliado' : 'Usuario no afiliado'),
+    accion: 'Pago por transferencia informado',
+    entidad: `Reserva ${reserva.codigo}`,
+    detalle: `Transferencia informada por ${reserva.monto_total}. Pendiente de confirmación por Oficina Central.`,
+  })
+  return responder({
+    ...reserva,
+    inmueble: store.inmuebles.find((i) => i.id === reserva.inmueble_id) ?? null,
+  })
+}
+
+/** GET /api/pagos/transferencia/pendientes — bandeja de Oficina Central. */
+export function getPagosTransferenciaPendientes() {
+  const items = store.reservas
+    .filter((r) => r.pago_transferencia?.estado === 'informado')
+    .map((r) => ({
+      ...r,
+      inmueble: store.inmuebles.find((i) => i.id === r.inmueble_id) ?? null,
+    }))
+    .sort((a, b) => (a.pago_transferencia.informado_en < b.pago_transferencia.informado_en ? 1 : -1))
+  return responder(lista(items))
+}
+
+/** PATCH /api/reservas/{codigo}/pago-transferencia/confirmar — Oficina Central. */
+export function confirmarPagoTransferencia(codigo, actor) {
+  const reserva = store.reservas.find((r) => r.codigo === codigo)
+  if (!reserva) return fallar(404, 'Reserva no encontrada')
+  if (reserva.pago_transferencia?.estado !== 'informado') {
+    return fallar(422, 'No existe una transferencia pendiente de confirmación para esta reserva.')
+  }
+
+  reserva.pago_transferencia = {
+    ...reserva.pago_transferencia,
+    estado: 'confirmado',
+    confirmado_en: ahoraISO(),
+    confirmado_por: actor?.nombre ?? 'Oficina Central',
+  }
+
+  // Al confirmarse el pago total por transferencia, el cobro deja de corresponder
+  // a descuento por planilla. Se conserva la marca para trazabilidad, pero se oculta
+  // de la nómina operativa que se exporta a Personal/Remuneraciones.
+  store.nominas.forEach((nomina) => {
+    nomina.items.forEach((item) => {
+      if (item.reserva_codigo === codigo) {
+        item.excluido_por_pago_transferencia = true
+        item.excluido_en = reserva.pago_transferencia.confirmado_en
+        item.excluido_por = reserva.pago_transferencia.confirmado_por
+      }
+    })
+  })
+
+  persistir()
+  registrarAuditoria({
+    usuario: actor?.nombre ?? 'Oficina Central',
+    perfil: actor?.perfil ?? 'Oficina Central',
+    accion: 'Transferencia confirmada',
+    entidad: `Reserva ${reserva.codigo}`,
+    detalle: `Pago total por transferencia confirmado por ${reserva.monto_total}. Reserva excluida de descuento por planilla.`,
+  })
+  return responder({
+    ...reserva,
+    inmueble: store.inmuebles.find((i) => i.id === reserva.inmueble_id) ?? null,
+  })
+}
+
+>>>>>>> Stashed changes
 /** GET /api/reservas/simular-tarifa — usada por el asistente de reserva. */
 export function simularTarifa({
   inmueble_id,

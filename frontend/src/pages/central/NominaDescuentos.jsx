@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { CheckCheck, Download, FileSpreadsheet, Send } from 'lucide-react'
+import { Banknote, CheckCheck, CheckCircle2, Download, FileSpreadsheet, Send } from 'lucide-react'
 import { getNominas, marcarNomina } from '../../api/gestion.js'
+import { confirmarPagoTransferencia, getPagosTransferenciaPendientes } from '../../api/reservas.js'
 import { ESTADOS_COBRO } from '../../lib/estados.js'
-import { numero, pesos } from '../../lib/formato.js'
+import { fechaCorta, numero, pesos } from '../../lib/formato.js'
 import { useRol } from '../../context/RolContext.jsx'
 import { Tabla, Encabezado, Cuerpo, Fila, Celda } from '../../components/ui/Tabla.jsx'
 import {
@@ -14,6 +15,71 @@ import {
   TituloSeccion,
   clasesInput,
 } from '../../components/ui/Elementos.jsx'
+
+
+function TarjetaTransferencias({ transferencias, confirmando, onConfirmar }) {
+  return (
+    <div className="mb-5 rounded-xl border border-arena-200 bg-white p-5 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 text-verde-900">
+            <Banknote size={19} aria-hidden="true" />
+            <h2 className="text-lg font-semibold">Transferencias por confirmar</h2>
+          </div>
+          <p className="mt-1 text-sm text-slate-600">
+            Pagos informados por afiliados o usuarios no afiliados después del check-out. Al confirmar el pago total, la reserva se excluye automáticamente de la nómina enviada a Personal/Remuneraciones.
+          </p>
+        </div>
+        <span className="tabular rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
+          {transferencias.length} pendiente{transferencias.length === 1 ? '' : 's'}
+        </span>
+      </div>
+
+      {transferencias.length === 0 ? (
+        <div className="mt-4 rounded-lg bg-verde-50 p-3 text-sm text-verde-900">
+          No hay transferencias pendientes de confirmación.
+        </div>
+      ) : (
+        <div className="mt-4 overflow-x-auto">
+          <Tabla>
+            <Encabezado columnas={[
+              { clave: 'rut', titulo: 'RUT' },
+              { clave: 'nombre', titulo: 'Titular' },
+              { clave: 'reserva', titulo: 'Reserva' },
+              { clave: 'inmueble', titulo: 'Inmueble' },
+              { clave: 'fecha', titulo: 'Pago informado' },
+              { clave: 'monto', titulo: 'Monto', alineacion: 'derecha' },
+              { clave: 'accion', titulo: '' },
+            ]} />
+            <Cuerpo>
+              {transferencias.map((r) => (
+                <Fila key={r.codigo}>
+                  <Celda className="tabular">{r.titular_rut}</Celda>
+                  <Celda>{r.titular_nombre}</Celda>
+                  <Celda className="tabular text-verde-700">{r.codigo}</Celda>
+                  <Celda className="text-slate-600">{r.inmueble?.nombre ?? '—'}</Celda>
+                  <Celda className="tabular">{fechaCorta(r.pago_transferencia.informado_en.slice(0, 10))}</Celda>
+                  <Celda numerica className="font-medium">{pesos(r.pago_transferencia.monto)}</Celda>
+                  <Celda>
+                    <Boton
+                      variante="secundario"
+                      cargando={confirmando === r.codigo}
+                      disabled={Boolean(confirmando) && confirmando !== r.codigo}
+                      onClick={() => onConfirmar(r.codigo)}
+                    >
+                      <CheckCircle2 size={15} aria-hidden="true" />
+                      Confirmar transferencia
+                    </Boton>
+                  </Celda>
+                </Fila>
+              ))}
+            </Cuerpo>
+          </Tabla>
+        </div>
+      )}
+    </div>
+  )
+}
 
 function descargarCSV(nombre, filas) {
   const contenido = filas.map((f) => f.map((c) => `"${String(c ?? '')}"`).join(';')).join('\n')
@@ -42,12 +108,15 @@ export function NominaDescuentos() {
   const [periodo, setPeriodo] = useState('')
   const [cargando, setCargando] = useState(true)
   const [procesando, setProcesando] = useState(false)
+  const [transferencias, setTransferencias] = useState([])
+  const [confirmandoTransferencia, setConfirmandoTransferencia] = useState(null)
 
   const cargar = useCallback(() => {
     setCargando(true)
-    getNominas()
-      .then((r) => {
+    Promise.all([getNominas(), getPagosTransferenciaPendientes()])
+      .then(([r, pagos]) => {
         setNominas(r.items)
+        setTransferencias(pagos.items)
         setPeriodo((p) => p || r.items[0]?.periodo || '')
       })
       .finally(() => setCargando(false))
@@ -85,6 +154,16 @@ export function NominaDescuentos() {
       cargar()
     } finally {
       setProcesando(false)
+    }
+  }
+
+  const confirmarTransferencia = async (codigo) => {
+    setConfirmandoTransferencia(codigo)
+    try {
+      await confirmarPagoTransferencia(codigo, actor)
+      cargar()
+    } finally {
+      setConfirmandoTransferencia(null)
     }
   }
 
@@ -161,6 +240,12 @@ export function NominaDescuentos() {
           </>
         )}
       </div>
+
+      <TarjetaTransferencias
+        transferencias={transferencias}
+        confirmando={confirmandoTransferencia}
+        onConfirmar={confirmarTransferencia}
+      />
 
       <Aviso tono="info" titulo="Integración con Remuneraciones">
         El archivo exportado se envía a Remuneraciones para su aplicación en planilla. Cada

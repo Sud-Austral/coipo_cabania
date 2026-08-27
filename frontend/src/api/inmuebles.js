@@ -166,6 +166,13 @@ export function actualizarInmueble(id, cambios, actor) {
   return responder(inmueble)
 }
 
+/** GET /api/inmuebles/{id}/disponibilidad-rango?desde=&hasta=
+ * Valida de forma explícita un rango antes de permitir avanzar con la solicitud.
+ */
+export function validarDisponibilidadRango(inmuebleId, desde, hasta) {
+  return responder(rangoDisponible(inmuebleId, desde, hasta))
+}
+
 /** Utilidad interna: ¿el rango solicitado está libre? */
 export function rangoDisponible(inmuebleId, desde, hasta) {
   const inicio = parseISO(desde)

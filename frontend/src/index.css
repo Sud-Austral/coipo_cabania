@@ -112,21 +112,27 @@ body {
   font-size: 0.9rem;
 }
 
+.rdp-day.dia-ocupado,
 .rdp-day.dia-ocupado .rdp-day_button {
   background-color: #fee2e2;
   color: #991b1b;
   text-decoration: line-through;
+  border-radius: 9999px;
 }
 
+.rdp-day.dia-bloqueado,
 .rdp-day.dia-bloqueado .rdp-day_button {
   background-color: #e2e8f0;
   color: #64748b;
   text-decoration: line-through;
+  border-radius: 9999px;
 }
 
+.rdp-day.dia-mantencion,
 .rdp-day.dia-mantencion .rdp-day_button {
   background-color: #fef3c7;
   color: #92400e;
+  border-radius: 9999px;
 }
 
 /* Leaflet dentro de tarjetas redondeadas.

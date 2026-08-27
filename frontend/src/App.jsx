@@ -6,6 +6,7 @@ import { FichaInmueble } from './pages/publico/FichaInmueble.jsx'
 import { Reservar } from './pages/publico/Reservar.jsx'
 import { Comprobante } from './pages/publico/Comprobante.jsx'
 import { MisReservas } from './pages/publico/MisReservas.jsx'
+import { PagoTransferencia } from './pages/publico/PagoTransferencia.jsx'
 import { PanelRegional } from './pages/regional/PanelRegional.jsx'
 import { CalendarioOperativo } from './pages/regional/CalendarioOperativo.jsx'
 import { ReservasPais } from './pages/central/ReservasPais.jsx'
@@ -44,6 +45,14 @@ export default function App() {
           element={
             <RequiereRol roles={PORTAL}>
               <MisReservas />
+            </RequiereRol>
+          }
+        />
+        <Route
+          path="reservas/:codigo/pago-transferencia"
+          element={
+            <RequiereRol roles={PORTAL}>
+              <PagoTransferencia />
             </RequiereRol>
           }
         />

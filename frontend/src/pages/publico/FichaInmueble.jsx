@@ -9,11 +9,11 @@ import {
   MapPin,
   Users,
 } from 'lucide-react'
-import { getInmueble } from '../../api/inmuebles.js'
+import { getInmueble, validarDisponibilidadRango } from '../../api/inmuebles.js'
 import { getValoraciones } from '../../api/valoraciones.js'
 import { etiquetaTipo, nombreRegion } from '../../fixtures/inmuebles.js'
 import { tarifas } from '../../fixtures/tarifas.js'
-import { fechaCorta, pesos } from '../../lib/formato.js'
+import { aISO, fechaCorta, fechaLarga, pesos } from '../../lib/formato.js'
 import { useRol } from '../../context/RolContext.jsx'
 import { GaleriaFotos } from '../../components/inmuebles/GaleriaFotos.jsx'
 import { MapaInmueble } from '../../components/inmuebles/MapaInmueble.jsx'
@@ -128,9 +128,26 @@ function Valoraciones({ inmuebleId }) {
 export function FichaInmueble() {
   const { id } = useParams()
   const navegar = useNavigate()
+<<<<<<< Updated upstream
+=======
+  const [parametros] = useSearchParams()
+  const entradaInicial = parametros.get('entrada')
+  const salidaInicial = parametros.get('salida')
+>>>>>>> Stashed changes
   const { esNoAfiliado, esPortal } = useRol()
   const [inmueble, setInmueble] = useState(null)
   const [cargando, setCargando] = useState(true)
+  const [rango, setRango] = useState(
+    entradaInicial && salidaInicial
+      ? { from: new Date(`${entradaInicial}T12:00:00`), to: new Date(`${salidaInicial}T12:00:00`) }
+      : undefined,
+  )
+  const [disponibilidad, setDisponibilidad] = useState(null)
+  const [validandoDisponibilidad, setValidandoDisponibilidad] = useState(false)
+
+  const fechaEntrada = rango?.from ? aISO(rango.from) : null
+  const fechaSalida = rango?.to ? aISO(rango.to) : null
+  const queryFechas = fechaEntrada && fechaSalida ? `?entrada=${fechaEntrada}&salida=${fechaSalida}` : ''
 
   useEffect(() => {
     let vigente = true
@@ -143,6 +160,23 @@ export function FichaInmueble() {
       vigente = false
     }
   }, [id])
+
+  useEffect(() => {
+    let vigente = true
+    if (!fechaEntrada || !fechaSalida) {
+      setDisponibilidad(null)
+      setValidandoDisponibilidad(false)
+      return () => { vigente = false }
+    }
+
+    setValidandoDisponibilidad(true)
+    validarDisponibilidadRango(id, fechaEntrada, fechaSalida)
+      .then((r) => vigente && setDisponibilidad(r))
+      .catch(() => vigente && setDisponibilidad({ libre: false, motivo: 'No fue posible comprobar la disponibilidad.' }))
+      .finally(() => vigente && setValidandoDisponibilidad(false))
+
+    return () => { vigente = false }
+  }, [id, fechaEntrada, fechaSalida])
 
   if (cargando) return <Cargando texto="Cargando la ficha del inmueble…" />
 
@@ -290,11 +324,49 @@ export function FichaInmueble() {
               Consulte en línea qué fechas están libres, sin necesidad de escribir a la
               encargada regional.
             </p>
-            <CalendarioDisponibilidad inmuebleId={inmueble.id} meses={1} />
+            <CalendarioDisponibilidad
+              inmuebleId={inmueble.id}
+              meses={1}
+              modo={esPortal ? 'rango' : 'lectura'}
+              rango={rango}
+              onCambiarRango={setRango}
+            />
+
+            {esPortal && fechaEntrada && fechaSalida && (
+              <div className="mt-4">
+                {validandoDisponibilidad ? (
+                  <Aviso tono="info" titulo="Comprobando disponibilidad">
+                    Validando las fechas seleccionadas antes de continuar…
+                  </Aviso>
+                ) : disponibilidad?.libre ? (
+                  <Aviso tono="verde" titulo="Disponible para estas fechas">
+                    Ingreso el {fechaLarga(fechaEntrada)} y salida el {fechaLarga(fechaSalida)}.
+                    Puede continuar con la solicitud.
+                  </Aviso>
+                ) : (
+                  <Aviso tono="rojo" titulo="No disponible para estas fechas">
+                    {disponibilidad?.motivo ?? 'El inmueble no está disponible en el período seleccionado.'}
+                    Seleccione otro rango directamente en el calendario.
+                  </Aviso>
+                )}
+              </div>
+            )}
+
+            {esPortal && !fechaEntrada && !fechaSalida && (
+              <p className="mt-3 text-sm font-medium text-slate-600">
+                Seleccione primero las fechas de ingreso y salida para comprobar disponibilidad.
+              </p>
+            )}
+
             {esPortal && (
               <Boton
                 className="mt-4 w-full"
+<<<<<<< Updated upstream
                 onClick={() => navegar(`/inmuebles/${inmueble.id}/reservar`)}
+=======
+                disabled={!fechaEntrada || !fechaSalida || validandoDisponibilidad || !disponibilidad?.libre}
+                onClick={() => navegar(`/inmuebles/${inmueble.id}/reservar${queryFechas}`)}
+>>>>>>> Stashed changes
               >
                 Solicitar reserva
               </Boton>

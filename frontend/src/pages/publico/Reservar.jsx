@@ -9,7 +9,7 @@ import {
   Info,
   Send,
 } from 'lucide-react'
-import { getInmueble } from '../../api/inmuebles.js'
+import { getInmueble, validarDisponibilidadRango } from '../../api/inmuebles.js'
 import { crearReserva } from '../../api/reservas.js'
 import { MOTIVOS, PARENTESCOS } from '../../fixtures/tarifas.js'
 import { temporadas } from '../../fixtures/temporadas.js'
@@ -80,6 +80,8 @@ export function Reservar() {
   const [paso, setPaso] = useState(1)
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState(null)
+  const [disponibilidad, setDisponibilidad] = useState(null)
+  const [validandoDisponibilidad, setValidandoDisponibilidad] = useState(false)
 
   const [rango, setRango] = useState(undefined)
   const [motivo, setMotivo] = useState('personal')
@@ -135,6 +137,23 @@ export function Reservar() {
   const fechaEntrada = rango?.from ? aISO(rango.from) : null
   const fechaSalida = rango?.to ? aISO(rango.to) : null
 
+  useEffect(() => {
+    let vigente = true
+    if (!fechaEntrada || !fechaSalida) {
+      setDisponibilidad(null)
+      setValidandoDisponibilidad(false)
+      return () => { vigente = false }
+    }
+
+    setValidandoDisponibilidad(true)
+    validarDisponibilidadRango(id, fechaEntrada, fechaSalida)
+      .then((r) => vigente && setDisponibilidad(r))
+      .catch(() => vigente && setDisponibilidad({ libre: false, motivo: 'No fue posible comprobar la disponibilidad.' }))
+      .finally(() => vigente && setValidandoDisponibilidad(false))
+
+    return () => { vigente = false }
+  }, [id, fechaEntrada, fechaSalida])
+
   const tarifa = useMemo(() => {
     if (!inmueble || !fechaEntrada || !fechaSalida) return null
     return calcularTarifa({
@@ -173,8 +192,13 @@ export function Reservar() {
   const acompanantesIncompletos = acompanantes.some((a) => !a.nombre.trim() || !a.rut.trim())
 
   const puedeAvanzar = {
+<<<<<<< Updated upstream
     1: Boolean(fechaEntrada && fechaSalida && tarifa?.noches > 0),
     2: !excedeCapacidad && !acompanantesIncompletos,
+=======
+    1: Boolean(fechaEntrada && fechaSalida && tarifa?.noches > 0 && disponibilidad?.libre && !validandoDisponibilidad),
+    2: !excedeCapacidad && !acompanantesIncompletos && !rutsInvalidos && !rutsDuplicados,
+>>>>>>> Stashed changes
     3: true,
     4: true,
   }[paso]
@@ -252,10 +276,21 @@ export function Reservar() {
                 </div>
 
                 {fechaEntrada && fechaSalida && (
-                  <Aviso tono="verde" icono={CalendarDays} titulo="Fechas seleccionadas">
-                    Ingreso el {fechaLarga(fechaEntrada)} y salida el {fechaLarga(fechaSalida)}
-                    {tarifa?.noches ? ` · ${tarifa.noches} noche(s)` : ''}.
-                  </Aviso>
+                  validandoDisponibilidad ? (
+                    <Aviso tono="info" icono={CalendarDays} titulo="Comprobando disponibilidad">
+                      Validando las fechas seleccionadas…
+                    </Aviso>
+                  ) : disponibilidad?.libre ? (
+                    <Aviso tono="verde" icono={CalendarDays} titulo="Fechas disponibles">
+                      Ingreso el {fechaLarga(fechaEntrada)} y salida el {fechaLarga(fechaSalida)}
+                      {tarifa?.noches ? ` · ${tarifa.noches} noche(s)` : ''}.
+                    </Aviso>
+                  ) : (
+                    <Aviso tono="rojo" icono={CircleAlert} titulo="El inmueble no está disponible">
+                      {disponibilidad?.motivo ?? 'Existe una ocupación o bloqueo dentro de las fechas seleccionadas.'}
+                      No puede avanzar con esta solicitud; seleccione otro rango en el calendario.
+                    </Aviso>
+                  )
                 )}
 
                 <Campo
@@ -447,7 +482,9 @@ export function Reservar() {
 
             {paso === 1 && !puedeAvanzar && (
               <p className="mt-2 text-right text-xs text-slate-500">
-                Seleccione el día de ingreso y el de salida para continuar.
+                {fechaEntrada && fechaSalida && !validandoDisponibilidad && disponibilidad && !disponibilidad.libre
+                  ? 'El rango seleccionado no está disponible. Elija otras fechas para continuar.'
+                  : 'Seleccione un rango disponible de ingreso y salida para continuar.'}
               </p>
             )}
           </Tarjeta>

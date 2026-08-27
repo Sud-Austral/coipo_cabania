@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { differenceInCalendarDays, parseISO } from 'date-fns'
-import { CalendarPlus, CircleSlash, Star } from 'lucide-react'
+import { Banknote, CalendarPlus, CheckCircle2, CircleSlash, Clock3, Star } from 'lucide-react'
 import { anularReserva, getReservas } from '../../api/reservas.js'
 import { crearValoracion } from '../../api/valoraciones.js'
 import { contarNoches, cobroPorDesistimiento } from '../../lib/tarifas.js'
@@ -168,13 +168,44 @@ export function MisReservas() {
             )
           }
           if (r.estado === 'finalizada') {
-            return r.valoracion ? (
-              <Estrellas valor={r.valoracion.estrellas} tamano={13} />
-            ) : (
-              <Boton variante="secundario" onClick={() => abrirValoracion(r)}>
-                <Star size={14} aria-hidden="true" />
-                Valorar
-              </Boton>
+            return (
+              <div className="flex flex-wrap justify-end gap-2">
+                {r.monto_total > 0 && !r.pago_transferencia && (
+                  <Link
+                    to={`/reservas/${r.codigo}/pago-transferencia`}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-verde-600 px-3 py-2 text-sm font-medium text-verde-700 hover:bg-verde-50"
+                  >
+                    <Banknote size={14} aria-hidden="true" />
+                    Pagar por transferencia
+                  </Link>
+                )}
+                {r.pago_transferencia?.estado === 'informado' && (
+                  <Link
+                    to={`/reservas/${r.codigo}/pago-transferencia`}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100"
+                  >
+                    <Clock3 size={14} aria-hidden="true" />
+                    Pago enviado
+                  </Link>
+                )}
+                {r.pago_transferencia?.estado === 'confirmado' && (
+                  <Link
+                    to={`/reservas/${r.codigo}/pago-transferencia`}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-verde-200 bg-verde-50 px-3 py-2 text-sm font-medium text-verde-800"
+                  >
+                    <CheckCircle2 size={14} aria-hidden="true" />
+                    Pagada por transferencia
+                  </Link>
+                )}
+                {r.valoracion ? (
+                  <Estrellas valor={r.valoracion.estrellas} tamano={13} />
+                ) : (
+                  <Boton variante="secundario" onClick={() => abrirValoracion(r)}>
+                    <Star size={14} aria-hidden="true" />
+                    Valorar
+                  </Boton>
+                )}
+              </div>
             )
           }
           return null
