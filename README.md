@@ -1,3 +1,4 @@
+
 # coipo_cabania — Sistema de Reservas Bienestar CONAF
 
 Maqueta del sistema de reservas de la **Red de Casas de Huéspedes y Veraneo** del Servicio de
