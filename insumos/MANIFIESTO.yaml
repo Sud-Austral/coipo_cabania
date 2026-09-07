@@ -1,0 +1,181 @@
+archivos:
+
+  - ruta: frontend/package.json
+    sha256: "fdbbd7741e2bb1cca1f05f2ffe0d703a0b83aeb8cb3bf20a93b078de783f548b"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] no se inspeccionaron valores; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: unico manifiesto del repositorio; declara las dependencias y los comandos de la interfaz
+
+  - ruta: frontend/package-lock.json
+    sha256: "d6be7a93a2f2b6bc433303d6eadb2a0b1b3829c307bc624e49d9dbdd058eab6f"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] no se inspeccionaron valores; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: fija las versiones exactas resueltas de esas dependencias
+
+  - ruta: frontend/vite.config.js
+    sha256: "49c5f3cc6c92d15d848698bffea1c0f8a89128fef6df7290033a20bed669a911"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] no se inspeccionaron valores; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: configura la construccion de la interfaz
+
+  - ruta: frontend/.oxlintrc.json
+    sha256: "7992fc5e586c5c47ceb3f2989e73db423c9a22d0f67c05198eba06584a69eb91"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] no se inspeccionaron valores; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: configura la revision automatica de estilo de codigo
+
+  - ruta: .github/workflows/pages.yml
+    sha256: "6559d6b4a7a6ec0d3e5995ce91d943a3d849a0b8080558acb83f1b953b301008"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] no se inspeccionaron valores; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: publica el sitio construido; unico flujo automatico del repositorio
+
+  - ruta: .gitignore
+    sha256: "976e8588c91ce9d8c6d88c65dbca52f6087e7c40c63df668a89cb0cc482e1ce9"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] no se inspeccionaron valores; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: declara que no entra al control de versiones
+
+  - ruta: frontend/src/fixtures/usuarios.js
+    sha256: "fef8f6719c4166381a379b44385457bbd9e0b3c4e9e5c1e976e28b15558a8c66"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] modela usuarios y roles; vive bajo fixtures/, lo que sube la probabilidad de que sea sintetico pero no lo prueba; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: alimenta el selector de rol y la sesion simulada
+
+  - ruta: frontend/src/fixtures/reservas.seed.js
+    sha256: "41a49230638c2e66119140941f1cb9b19add66896e049538e4369da1b51db81f"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] siembra solicitudes que en produccion identificarian a personas y a sus acompanantes; vive bajo fixtures/; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: datos de partida de las solicitudes que la aplicacion muestra
+
+  - ruta: frontend/src/fixtures/gestion.seed.js
+    sha256: "bbd4970b394045709b8551069311107301ab33c02ef631b6c7b8cf4f706bcd1b"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] siembra sanciones y nomina, categorias que en produccion serian datos personales; vive bajo fixtures/; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: datos de partida de las pantallas de gestion
+
+  - ruta: frontend/src/fixtures/inmuebles.js
+    sha256: "604f89fbcdd2f1a91939a24de82eb59ee4e39c875dedaf71c5f60f984ba21e75"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] describe inmuebles y su ubicacion; no se inspeccionaron valores; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: catalogo de inmuebles, regiones, tipos y equipamiento
+
+  - ruta: frontend/src/fixtures/tarifas.js
+    sha256: "fdaab101c232db8b9bb699868270725f7af1d4bbf2e81e17b39a2325b58078b8"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] declara categorias de ocupante y parentescos; son categorias, no valores; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: motivos, categorias, parentescos y politica de desistimiento que alimentan el calculo de tarifa
+
+  - ruta: frontend/src/fixtures/temporadas.js
+    sha256: "b6fb587bdcedc8d02edd144f97bce2b809475b49866c6d373afdb34b845d3a9e"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] no se inspeccionaron valores; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: define los periodos que la aplicacion distingue
+
+  - ruta: frontend/src/lib/estados.js
+    sha256: "e87abb361dbd68d0c3b3142ec14815eadd881c09463dd02a88babec58d645044"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] no se inspeccionaron valores; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: fija los estados de una solicitud, su orden y cuales ocupan o cobran
+
+  - ruta: frontend/src/assets/fotos/CREDITS.md
+    sha256: "f43a19a681c9e2a39671849477293972acc4b845595bc145cb0d3104e80c462e"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] podria nombrar autores de las fotografias; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: declara la procedencia de las fotografias incluidas
+
+  - ruta: frontend/src/assets/banner-conaf-uia.jpg
+    sha256: "2f5d01a94eb796773b24e6c69a0c786ef39a496d4b9caa81ddc02b9fea322f70"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] imagen no inspeccionada; si aparecieran personas identificables seria dato personal; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: banner institucional de la interfaz
+
+  - ruta: INSUMO_GRAFICO/banner3.jpg
+    sha256: "2f5d01a94eb796773b24e6c69a0c786ef39a496d4b9caa81ddc02b9fea322f70"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] imagen no inspeccionada; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: insumo grafico de partida para el banner
+
+  - ruta: INSUMO_GRAFICO/verificacion/coipo_cabania/medidas.json
+    sha256: "1592b1f54fa28487b49a81fbfcb14a6e0dd17f8f590a8e184017a73ab2abc2c7"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] mediciones de imagenes; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: resultado de la verificacion visual de este proyecto
+
+  - ruta: INSUMO_GRAFICO/verificacion/coipo_cabania/comprobante-impresion.png
+    sha256: "3593039227b8ca9457bd424af8330417a442d2648c133fc3b64dd131c9804bb4"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] es una captura de un comprobante; si la captura se tomo con datos reales contendria datos personales; no se inspecciono; patron y conteo [PENDIENTE]"
+    puede_versionarse: "[VERIFICAR] depende de lo anterior"
+    uso: evidencia de como sale impreso el comprobante
+
+  - ruta: docs/ALCANCE.md
+    sha256: "961103713857039ea30a08886fcad3b85d36ca54f9b10ae7c4ab693185c27aeb"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] no se inspeccionaron valores; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: documento de alcance escrito dentro del repositorio
+
+  - ruta: docs/INSUMOS_BIENESTAR.md
+    sha256: "89232ea7d1654e18a2756efa1415cffe303495c9ea945be9628c64f6ab340355"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] documento de insumo del area; no se inspecciono; patron y conteo [PENDIENTE]"
+    puede_versionarse: "[VERIFICAR] el repositorio esta declarado publico en la evidencia de origen"
+    uso: insumo del que salen los requisitos de la aplicacion
+
+  - ruta: docs/INSUMOS_BIENESTAR.pdf
+    sha256: "aae534d7f7b1caf706c43af3ac49c5db9bd9f7babeb86986b26e2a650d7b77a9"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] documento binario no inspeccionado; patron y conteo [PENDIENTE]"
+    puede_versionarse: "[VERIFICAR] el repositorio esta declarado publico en la evidencia de origen"
+    uso: version en PDF del insumo anterior
+
+  - ruta: "INSUMO/Solicitud Sistema Reservas Bienestar.pdf"
+    sha256: "3d832c58c644ec9b752a244a228f33f9210672e308c3a8e60f16d4a3c034d1fc"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] documento binario no inspeccionado; una solicitud institucional suele traer nombres y cargos; patron y conteo [PENDIENTE]"
+    puede_versionarse: "[VERIFICAR] el repositorio esta declarado publico en la evidencia de origen"
+    uso: solicitud formal que dio origen al encargo
+
+  - ruta: INSUMO/revision.md
+    sha256: "7d7aa74c5c5af702908b6d5ae78fecce68aa225e50d3c6e9403aef7441c23414"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] podria nombrar a quien reviso; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: comentarios de una revision del trabajo
+
+  - ruta: INSUMO/ui_ux.md
+    sha256: "efc90c3fb7a23bc185481345cbcf5431ecbe12a3356a95965a3b722b32388fe0"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] no se inspeccionaron valores; patron y conteo [PENDIENTE]"
+    puede_versionarse: true
+    uso: criterios de interfaz que se aplicaron
+
+  - ruta: README.md
+    sha256: "4856b466fdf03f118b42f233877906810be0948f7595ef103a093cfb106492b7"
+    origen: "[PENDIENTE] quien lo entrego y cuando"
+    contiene_pii: "[VERIFICAR] su texto trata de otro sistema y menciona categorias de datos personales y credenciales de firma; no se transcribe ningun valor aca; patron y conteo [PENDIENTE]"
+    puede_versionarse: "[VERIFICAR] revisar antes de dejarlo en un repositorio publico"
+    uso: hoy no describe este sistema; es un hallazgo, no documentacion
+
+notas:
+  - "El analizador no detecto variables de entorno, definiciones de tabla ni rutas de servidor en este repositorio, asi que no hay archivo de configuracion de despliegue que sellar mas alla de [.github/workflows/pages.yml]."
+  - "Ningun archivo de datos se abrio: contiene_pii queda en [VERIFICAR] con el patron y sin conteo. Que vivan bajo frontend/src/fixtures/ hace mas probable que sean sinteticos, pero eso no los da por sinteticos."
+  - "Hallazgo para el informe: si algun archivo de este listado resulta contener datos personales, no puede quedar en un repositorio declarado publico. Este documento no edita [.gitignore] ni mueve nada."
