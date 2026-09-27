@@ -33,7 +33,22 @@ services:
     # dice healthy/unhealthy en vez de solo "Up". wget viene en BusyBox, en la
     # imagen alpine de nginx; curl no.
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8000/health"]
+      # `127.0.0.1` y NO `localhost`. Dentro de este contenedor /etc/hosts pone
+      # `::1 localhost` ANTES de la entrada IPv4, asi que `getent hosts localhost`
+      # devuelve ::1; el nginx de la imagen declara `listen 8000;` a secas, o sea
+      # solo IPv4; y el wget de BusyBox NO reintenta con IPv4 cuando el primero
+      # falla. Resultado: el chequeo daba "Connection refused" contra ::1 mientras
+      # la aplicacion respondia perfectamente. Medido dentro del contenedor en vm2
+      # el 2026-09-27: con 127.0.0.1 devuelve "ok", con localhost y con [::1] falla.
+      #
+      # El defecto estaba en quien PREGUNTA, no en quien responde: la alternativa
+      # era anadir `listen [::]:8000` al nginx de la imagen, y eso toca la
+      # aplicacion para arreglar un chequeo.
+      #
+      # NO generalizar: en la flota hay 16 healthchecks con `localhost` y QUINCE
+      # estan healthy. `localhost` no esta roto por si mismo; lo que rompe es la
+      # combinacion de las tres cosas de arriba.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8000/health"]
       interval: 30s
       timeout: 3s
       retries: 3
