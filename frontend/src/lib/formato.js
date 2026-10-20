@@ -1,34 +1,27 @@
-/** Utilidades de formato para la interfaz, en español de Chile. */
+export const pesos = (n) => '$' + Math.round(n).toLocaleString('es-CL')
 
-import { format, parseISO } from 'date-fns'
-import { es } from 'date-fns/locale'
+export const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`
 
-export const pesos = (monto) =>
-  new Intl.NumberFormat('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-    maximumFractionDigits: 0,
-  }).format(monto ?? 0)
+/** Limpia y da formato 12.345.678-9 */
+export function formatearRut(valor) {
+  const limpio = String(valor).replace(/[^0-9kK]/g, '').toUpperCase()
+  if (limpio.length < 2) return limpio
+  const cuerpo = limpio.slice(0, -1).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  return `${cuerpo}-${limpio.slice(-1)}`
+}
 
-export const numero = (valor) => new Intl.NumberFormat('es-CL').format(valor ?? 0)
-
-/** '2026-08-14' → '14 ago 2026' */
-export const fechaCorta = (iso) =>
-  iso ? format(parseISO(iso), "d MMM yyyy", { locale: es }) : ''
-
-/** '2026-08-14' → 'viernes 14 de agosto de 2026' */
-export const fechaLarga = (iso) =>
-  iso ? format(parseISO(iso), "EEEE d 'de' MMMM 'de' yyyy", { locale: es }) : ''
-
-/** '2026-08-14T10:15:00' → '14 ago 2026, 10:15' */
-export const fechaHora = (iso) =>
-  iso ? format(parseISO(iso), "d MMM yyyy, HH:mm", { locale: es }) : ''
-
-/** Fecha nativa → 'yyyy-MM-dd' (formato de intercambio con la futura API). */
-export const aISO = (fecha) => (fecha ? format(fecha, 'yyyy-MM-dd') : null)
-
-export const distancia = (km) =>
-  km < 1 ? `${Math.round(km * 1000)} m` : `${numero(km)} km`
-
-/** Ficticio, solo presentación: no valida dígito verificador. */
-export const formatearRut = (rut) => (rut ?? '').toUpperCase().trim()
+/** Verifica el dígito verificador (módulo 11). */
+export function rutValido(valor) {
+  const limpio = String(valor).replace(/[^0-9kK]/g, '').toUpperCase()
+  if (limpio.length < 7) return false
+  const cuerpo = limpio.slice(0, -1)
+  let suma = 0
+  let factor = 2
+  for (let i = cuerpo.length - 1; i >= 0; i--) {
+    suma += Number(cuerpo[i]) * factor
+    factor = factor === 7 ? 2 : factor + 1
+  }
+  const resto = 11 - (suma % 11)
+  const dv = resto === 11 ? '0' : resto === 10 ? 'K' : String(resto)
+  return dv === limpio.slice(-1)
+}

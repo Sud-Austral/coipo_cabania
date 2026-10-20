@@ -39,3 +39,6 @@ data/
 *.njsproj
 *.sln
 *.sw?
+
+# Versión de un solo archivo (npm run build:pagina)
+dist-pagina/
