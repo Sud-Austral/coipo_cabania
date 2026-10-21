@@ -1,0 +1,27 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "verificar:banner": "node scripts/verify-banner.mjs",
+    "verificar:titulo": "node scripts/verificar-titulo.mjs"
+  },
+  "dependencies": {
+    "date-fns": "^4.4.0",
+    "maplibre-gl": "^6.15.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.0",
+    "playwright": "^1.63.0",
+    "sharp": "^0.35.4",
+    "vite": "^8.2.2",
+    "vitest": "^4.1.10"
+  }
+}

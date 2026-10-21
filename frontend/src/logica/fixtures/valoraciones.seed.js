@@ -1,0 +1,88 @@
+/**
+ * Valoraciones de ejemplo — DATOS FICTICIOS.
+ *
+ * Cada valoración pertenece a una reserva finalizada de `reservas.seed.js`:
+ * solo quien se alojó puede valorar. Las estrellas van de 1 a 5.
+ */
+export const valoracionesSeed = [
+  {
+    id: 1,
+    inmueble_id: 9,
+    reserva_codigo: 'R-2026-0006',
+    usuario_id: 13,
+    autor: 'Pedro Millán Quezada',
+    estrellas: 5,
+    comentario: 'Muy buena ubicación para el cometido y la casa estaba impecable.',
+    fecha: '2026-07-24T12:10:00',
+  },
+  {
+    id: 2,
+    inmueble_id: 9,
+    reserva_codigo: 'R-2026-0010',
+    usuario_id: 12,
+    autor: 'Ana Villalobos Díaz',
+    estrellas: 4,
+    comentario: 'Cómoda y bien equipada. La calefacción cuesta un poco al principio.',
+    fecha: '2026-06-18T11:00:00',
+  },
+  {
+    id: 3,
+    inmueble_id: 7,
+    reserva_codigo: 'R-2026-0007',
+    usuario_id: 11,
+    autor: 'Luis Cárdenas Soto',
+    estrellas: 5,
+    comentario: 'Excelente vista y muy tranquilo. Volveríamos sin dudarlo.',
+    fecha: '2026-07-16T12:30:00',
+  },
+  {
+    id: 4,
+    inmueble_id: 4,
+    reserva_codigo: 'R-2026-0015',
+    usuario_id: 16,
+    autor: 'Javiera Toro Sepúlveda',
+    estrellas: 3,
+    comentario: 'Cumple para una estadía corta, pero faltaba loza en la cocina.',
+    fecha: '2026-07-09T10:20:00',
+  },
+  {
+    id: 5,
+    inmueble_id: 14,
+    reserva_codigo: 'R-2026-0017',
+    usuario_id: 18,
+    autor: 'Ximena Bravo Alarcón',
+    estrellas: 4,
+    comentario: 'Buena atención de la encargada y entrega puntual de llaves.',
+    fecha: '2026-06-25T09:45:00',
+  },
+  {
+    id: 6,
+    inmueble_id: 25,
+    reserva_codigo: 'R-2026-0019',
+    usuario_id: 14,
+    autor: 'Soledad Ríos Peña',
+    estrellas: 5,
+    comentario: 'Muy cerca del hospital, fue clave para el control médico.',
+    fecha: '2026-07-16T14:00:00',
+  },
+  {
+    id: 7,
+    inmueble_id: 5,
+    reserva_codigo: 'R-2026-0030',
+    usuario_id: 16,
+    autor: 'Javiera Toro Sepúlveda',
+    estrellas: 4,
+    comentario: 'Ideal para ir con niños. La playa queda a pasos.',
+    fecha: '2026-01-19T13:15:00',
+  },
+  {
+    id: 8,
+    inmueble_id: 22,
+    reserva_codigo: 'R-2026-0032',
+    usuario_id: 11,
+    autor: 'Luis Cárdenas Soto',
+    estrellas: 2,
+    comentario: 'La casa necesita mantención: una ducha sin agua caliente.',
+    fecha: '2026-02-08T10:00:00',
+  },
+]

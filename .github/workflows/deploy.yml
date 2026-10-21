@@ -1,0 +1,171 @@
+# Despliegue a producción.
+#
+# El gancho de la Guía 6 —tres líneas de `uses:`— MÁS la compuerta. La guía dice
+# «eso es todo, no hay nada más que agregar»; esto agrega una cosa, y aquí está
+# el porqué.
+#
+# POR QUÉ EL `needs:`
+# ===================
+# El reusable de despliegue hace `rsync --delete` y después `up -d`, sin
+# rollback: cuando algo falla, el árbol anterior ya no existe. Un verificador
+# que corra en paralelo al deploy no sirve de nada —termina cuando el despliegue
+# ya ocurrió—, y ese es exactamente el bug que `coipo_prensa2` cerró y que otras
+# apps de la flota siguen teniendo abierto.
+#
+# `needs:` es la diferencia entre una compuerta y un informe.
+#
+# Y POR QUÉ EL `needs:` INCLUYE LA SUITE
+# ======================================
+# Porque `verificar` son los jueces en modo `advisory`, y advisory significa
+# exactamente que no pueden fallar. Con `needs: verificar` a secas, la única
+# compuerta del despliegue era un job que no bloquea nunca: la suite y el build
+# del frontend corrían en `ci.yml`, disparados por el mismo push, EN PARALELO con
+# el despliegue. Un push con los tests en rojo se desplegaba igual, y sin
+# rollback. Por eso `ci.yml` es ahora `workflow_call` y se llama desde aquí.
+#
+# POR QUÉ `vars.SERVIDOR_LISTO`
+# =============================
+# Porque el primer push de un repositorio recién sembrado sale ROJO, siempre, y
+# no por culpa del código: el reusable de despliegue se detiene en «Verificar
+# preparación del servidor» hasta que exista `/opt/apps/<app>/.env`, que se crea
+# a mano en la VM (Paso 6 de la guía). Medido el 2026-09-15 sobre
+# `coipo_atraso_personal`: 8 de 8 despliegues fallidos, todos por lo mismo. Un
+# repositorio que nace con el CI en rojo enseña a ignorar el rojo, que es la forma
+# más barata de perder una compuerta.
+#
+# Con esto, mientras la variable no exista el job queda OMITIDO —gris, no rojo— y
+# el aviso dice qué falta. Se enciende cuando el `.env` ya está en la VM:
+#
+#     gh variable set SERVIDOR_LISTO --body true
+#
+# POR QUÉ LA COMPUERTA CORRE EN vm3 Y NO EN `ubuntu-latest`
+# ========================================================
+# Porque un job facturable en el camino crítico de un despliegue convierte una
+# cuota agotada en una caída del despliegue, y eso ocurrió.
+#
+# Medido el 2026-09-26: la organización agotó los 2000 min/mes de Actions del
+# plan Free y el despliegue de `coipo_grafana` salió así —
+#
+#     failure  verificar / jueces (advisory)  labels=ubuntu-latest  runner=(ninguno)
+#     skipped  deploy
+#
+# `verificar` no falló una comprobación: se quedó SIN RUNNER. Y como `deploy` la
+# espera con `needs:`, el despliegue —que corre self-hosted y no cuesta nada— ni
+# se intentó. Una compuerta declarada advisory, que por diseño no puede fallar,
+# acabó siendo lo único que impidió desplegar a producción. El modo de fallo no
+# es «el gate dice no», es «el gate no arranca».
+#
+# Los jueces son de biblioteca estándar: sólo piden `git` y `python3`. El input
+# `runner` (coipo_jueces v2.0.9, default `ubuntu-latest`) los manda a `conaf-ci` en vm3, donde
+# corren igual y no consumen cuota. Verificado el 2026-09-26 en `coipo_grafana`
+# (prod y UAT), `coipo_umami` y `coipo_prevension_ministerial`: los cuatro
+# desplegaron con la cuota a cero, compuerta en vm3 y despliegue en vm2/vm3.
+#
+# LO QUE ESTUVO ABIERTO HASTA EL 2026-09-29, y por qué se cerró. Aquí decía que
+# `suite` —la llamada a `ci.yml` de abajo— corría TAMBIÉN en `ubuntu-latest` y
+# seguía bloqueando con la cuota agotada, y que moverla no era un input porque
+# «exige que la máquina tenga el toolchain de la app (Node, Python, Docker para
+# los `services:`), y eso se decide por aplicación».
+#
+# Esa duda era la que frenaba la migración, y está medida: vm3 tiene Docker 29.7.2
+# accesible por el usuario del runner, `setup-node` y `setup-python` instalan
+# cualquier versión sobre Ubuntu 24.04 —la misma base que `ubuntu-24.04`—, un
+# `postgres:17-alpine` como service container acepta conexiones, y las 16
+# dependencias de sistema de chromium ya están en el anfitrión. Los dos jobs de
+# `ci.yml` corren ahí desde entonces, con dos cambios que van en el MISMO commit
+# y no valen por separado: puerto efímero en el `services:` (con puerto fijo, el
+# segundo proceso de runner choca con el primero) y `playwright install` sin
+# `--with-deps` (vm3 no tiene sudo sin contraseña).
+#
+# Con eso, la regla de abajo se cumple entera en este archivo. Lo que sigue
+# abierto es `deploy-uat.yml`, que NO está en este esqueleto: se escribe a mano
+# por aplicación, y el que hay hoy en la flota excluye la suite de su `needs:`
+# citando como razón que «ci.yml corre en ubuntu-latest» — razón que este cambio
+# acaba de invalidar. Ver §19 de `docs/APRENDIZAJES-DE-ACTIONS.md`.
+#
+# LA REGLA, para que sea comprobable: ningún job facturable
+# (`runs-on: ubuntu-*|windows-*|macos-*`, directo o a través de un reusable)
+# debe estar en el `needs:` de un job que despliega.
+#
+# POR QUÉ `advisory` Y NO `bloqueante`
+# ====================================
+# Se mide primero y se aprieta después. Encender el modo bloqueante sobre un
+# repositorio que todavía no cumple deja sin desplegar hasta los arreglos
+# urgentes, y lo previsible entonces es que alguien borre estas líneas. Se pasa
+# a `bloqueante` cuando el repositorio ya sale limpio, no antes — y ese día es
+# un cambio de una palabra.
+#
+# POR QUÉ LAS REFERENCIAS SON DISTINTAS
+# =====================================
+#   coipo_jueces      -> `@v2`, etiqueta móvil de la mayor vigente. Las reglas
+#                        nuevas de esa mayor llegan solas; una mayor 3 con reglas
+#                        incompatibles no: se migra a propósito, uno a uno.
+#
+#                        OJO CON LA OTRA MITAD. El `uses:` fija el YAML; el CÓDIGO
+#                        de los jueces lo trae el input `ref_jueces`, cuyo valor
+#                        por defecto es también la mayor móvil. Aquí se dejan las
+#                        dos móviles a propósito: es un proyecto recién sembrado y
+#                        lo que le conviene es recibir las correcciones. Pero si
+#                        algún día se pinea el `uses:` a un SHA, hay que pasar
+#                        `ref_jueces` con el MISMO SHA — si no, se congela el YAML
+#                        y el motor sigue moviéndose, en silencio.
+#   infra-docker-base -> `@main`, porque es el ÚNICO canal por el que una
+#                        corrección del despliegue alcanza a la flota. Fijarlo a
+#                        un SHA deja este repositorio con el despliegue viejo sin
+#                        que nada avise.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    uses: Sud-Austral/coipo_jueces/.github/workflows/verificar.yml@v2
+    with:
+      modo: advisory
+      perfil: aplicacion
+      # En vm3, no en `ubuntu-latest`. Ver «POR QUÉ LA COMPUERTA CORRE EN vm3».
+      runner: conaf-ci
+
+  # La suite y el build, los mismos que corren en cada rama. Se llama al workflow
+  # en vez de repetir sus jobs aquí: dos copias de la misma compuerta derivan, y
+  # la que deja de correr es siempre la que nadie mira.
+  #
+  # LO QUE ESTO CUESTA, dicho en vez de callado: en un push a `main`, la suite
+  # corre DOS veces —una por el `push:` de `ci.yml` y otra por esta llamada—. Se
+  # acepta a propósito. Quitar `main` del disparador de `ci.yml` lo arreglaría,
+  # pero dejaría sin existir los checks llamados `CI / backend` y `CI / frontend`
+  # en esa rama, que es lo que una regla de protección de rama nombra. Cambiarlo
+  # exige mirar antes las protecciones del repositorio, y eso no se puede hacer
+  # desde una plantilla.
+  suite:
+    uses: ./.github/workflows/ci.yml
+
+  aviso-servidor:
+    # Sólo aparece cuando el despliegue se omite, y dice por qué. Sin esto, un
+    # workflow con todo en gris se lee como «no pasó nada».
+    if: vars.SERVIDOR_LISTO != 'true'
+    # En vm3 y no en `ubuntu-latest`: este job aparece en CADA push mientras el
+    # servidor no esté listo, que es justo la fase en la que una aplicación
+    # recién sembrada empuja veinte veces. Un minuto facturable por push para
+    # imprimir un aviso, y sin cuota el aviso tampoco se imprime.
+    runs-on: conaf-ci
+    timeout-minutes: 5
+    steps:
+      - run: |
+          echo "::warning::El despliegue no corre: falta la variable SERVIDOR_LISTO."
+          echo "Crea /opt/apps/${{ github.event.repository.name }}/.env en la VM (Paso 6 de"
+          echo "docs/COMO-USAR-LA-FABRICA.md) y despues enciendelo con:"
+          echo "  gh variable set SERVIDOR_LISTO --body true"
+
+  deploy:
+    if: vars.SERVIDOR_LISTO == 'true'
+    needs: [verificar, suite]
+    uses: Sud-Austral/infra-docker-base/.github/workflows/deploy.yml@main
+    with:
+      app_name: ${{ github.event.repository.name }}

@@ -27,3 +27,27 @@ deploy
 # QA manual con Chrome: se corre desde el equipo de trabajo contra un servidor ya
 # levantado, nunca dentro de la imagen.
 frontend/qa
+
+# --- anadido por semilla/sembrar.py ---
+.gitignore
+.gitattributes
+**/node_modules
+**/dist
+**/coverage
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+identidad/
+INSUMO_GRAFICO/
+INSUMO_PRODUCCION2/
+insumos/
+docs/
+data/
+.claude/
+.qodo/
+.vscode/
+.idea/
+*.log
+alta-iam*

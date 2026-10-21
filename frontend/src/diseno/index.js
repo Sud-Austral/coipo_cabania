@@ -1,0 +1,10 @@
+/* Sistema de diseño Bento. Ver docs/DISENO_BENTO.md. */
+export { default as Cabecera } from './Cabecera.jsx'
+export { default as InterruptorTema } from './InterruptorTema.jsx'
+export { default as Modulo } from './Modulo.jsx'
+export { default as Contador } from './Contador.jsx'
+export { default as Curva } from './Curva.jsx'
+export { default as Anillo } from './Anillo.jsx'
+export { useTema, aplicarTema, temaInicial } from './tema.js'
+export { useEnVista, reducido } from './movimiento.js'
+export { useArrastre } from './useArrastre.js'

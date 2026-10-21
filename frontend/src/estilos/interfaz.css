@@ -1,0 +1,498 @@
+/* Tokens de INTERFAZ — el contrato común de la flota COIPO.
+   ==========================================================
+
+   ES EL ESTÁNDAR. Lo sostiene `identidad/ESTANDAR_UI.md`, FIRMADO el 2026-09-07
+   (Luis Monsalve, Profesional UIA), y sus reglas `UI-1` a `UI-15` BLOQUEAN en
+   todo repositorio que declare seguirlas con `.semilla`.
+
+   El anexo de móvil (§8, reglas `UI-16` a `UI-20`) se firmó el 2026-09-08, por
+   delegación expresa.
+
+   Esta cabecera ha ido por detrás de la firma DOS VECES, y el archivo se copia a
+   cada proyecto nuevo: decía «BORRADOR EN CUARENTENA … NADIE LO HA FIRMADO»
+   hasta el 2026-09-08, un día después de la firma de §1-7, y siguió dando el §8
+   por «sin firmar» hasta el 2026-09-15, una semana después de la suya. Un
+   estándar cuya propia copia lo niega no lo aplica nadie.
+
+   POR QUÉ ESTE ARCHIVO Y NO DENTRO DE tokens.css
+   ----------------------------------------------
+   `tokens.css` tiene una propiedad que vale más que la comodidad de tener un
+   solo archivo: CADA NÚMERO SUYO SALE DE `marca.json`, o sea una MEDIDA del JPEG
+   o la zona del título que se midió una vez sobre los siete y que
+   `frontend/scripts/verificar-titulo.mjs` vuelve a comprobar sobre cada JPEG; y
+   `frontend/scripts/verify-banner.mjs` compara lo pintado en el navegador contra
+   `marca.json`. Si alguien teclea ahí un número distinto, sale rojo.
+
+   Lo de abajo NO son medidas: son DECISIONES DE INTERFAZ derivadas de ellas.
+   Mezclarlas destruiría esa propiedad — nadie podría volver a decir «todo lo de
+   este archivo está medido», y el verificador dejaría de ser una garantía para
+   convertirse en una comprobación parcial sobre un archivo mixto.
+
+   Se importa DESPUÉS de tokens.css, para poder derivar de sus medidas:
+
+       import './estilos/tokens.css'
+       import './estilos/interfaz.css'     <-- esta línea, en src/main.jsx
+
+   QUÉ ES CADA COSA
+   ----------------
+   MEDIDO    sale de un JPEG o de un cálculo sobre uno. No se toca.
+   DERIVADO  calculado a partir de un MEDIDO, con el cálculo escrito al lado.
+   DECISIÓN  elegido. Se puede discutir, y por eso lleva su porqué. */
+
+:root {
+  /* ── Color de marca ────────────────────────────────────────────────────────
+     MEDIDO. Los dos primeros son idénticos bit a bit en los SIETE banners de
+     gerencia (verificado extrayendo el píxel dominante por zona con Pillow), así
+     que pueden ser globales. El tercero vive en tokens.css y NO se repite aquí:
+     sobre el remate no va texto nunca, así que no es un color de interfaz. */
+  --verde-institucional: var(--banner-campo-principal, #064928);
+  --tinta-institucional: var(--banner-campo-izquierdo, #15301d);
+
+  /* DERIVADO. Paso seguro del verde institucional para superficies oscuras.
+     `#064928` sobre la tarjeta oscura da 1,38:1 — invisible. No se corrige el
+     medido: se deriva. `#4fb37a` da 5,57:1 sobre `#232b27` y 6,41:1 sobre
+     `#1a1f1c`. Es además el valor al que producción ya llegó parcheando a mano
+     (estilos.css:345 de coipo_prensa2), lo que sugiere que es el paso correcto.
+     ESTANDAR_UI.md UI-4. */
+  --verde-interfaz-oscuro: #4fb37a;
+
+  /* ── Superficies y texto ───────────────────────────────────────────────────
+     DERIVADO y VERIFICADO. Cada par de abajo se midió con la fórmula de WCAG
+     2.1 antes de escribirlo; los ratios están en el comentario. La regla es la
+     de `ESTANDAR_UI.md`: 4,5:1 para texto, 3:1 para lo que IDENTIFICA un
+     componente. Un separador decorativo no entra en 1.4.11 y por eso hay dos
+     tokens de borde, no uno. */
+  --fondo: #f5f7f6;
+  --superficie: #ffffff;
+  --texto: #15301d;          /* 13,26 sobre fondo · 14,26 sobre superficie   */
+  --texto-tenue: #5b6560;    /*  5,62 ·  6,04                                */
+  --borde-sutil: #e3e6e5;    /* separa; no identifica: sin umbral            */
+  --borde-control: #767f7b;  /*  3,83 ·  4,12 — SÍ identifica: 1.4.11        */
+  --deshabilitado: #9aa5a0;  /*  2,54 — 1.4.3 exceptúa lo inactivo           */
+
+  /* ── Color de estado ───────────────────────────────────────────────────────
+     DECISIÓN, no medida: CONAF no tiene manual de marca y los banners sólo dan
+     verdes. El error parte de `#b23b3b`, que es el que la flota YA usa en
+     producción —heredado del uso, que no es una medida pero tampoco una
+     invención—; aviso e información se eligieron y se verificaron.
+
+     REGLA DURA, y es la razón de que estos tres colores existan sin poder
+     apoyarse en nada medido: NINGUNO codifica por sí solo. Forma o icono, más
+     etiqueta, más color, en ese orden. Rojo-ámbar-verde es el peor caso posible
+     para el daltonismo rojo-verde, que afecta a un 8% de los hombres. UI-13. */
+  --error: #b23b3b;   /* 5,45 · 5,86 */
+  --aviso: #8a5a00;   /* 5,51 · 5,93 */
+  --info: #1f5c8b;    /* 6,59 · 7,09 */
+
+  /* ── Espaciado ─────────────────────────────────────────────────────────────
+     DECISIÓN. Escala de 8 con dos medios pasos abajo. TODO en rem y una sola
+     unidad: hoy la flota tiene 35 tokens de espaciado conviviendo, con OCHO
+     duplicaciones exactas entre px y rem (4px/0.25rem, 8px/0.5rem, 12px/0.75rem,
+     16px/1rem, 20px/1.25rem, 24px/1.5rem, 28px/1.75rem, 32px/2rem). Una sola
+     unidad es lo que impide que vuelvan. UI-7. */
+  --e-0: 0;
+  --e-1: .25rem;    /*  4 */
+  --e-2: .5rem;     /*  8 */
+  --e-3: .75rem;    /* 12 */
+  --e-4: 1rem;      /* 16 */
+  --e-5: 1.5rem;    /* 24 */
+  --e-6: 2rem;      /* 32 */
+  --e-7: 3rem;      /* 48 */
+  --e-8: 4rem;      /* 64 */
+  --e-9: 6rem;      /* 96 */
+
+  /* ── Tipografía ────────────────────────────────────────────────────────────
+     DECISIÓN. Siete pasos, razón ≈1,2. Hoy hay 22 tamaños distintos, y ONCE de
+     ellos caen entre 11,5px y 16px, donde una escala tiene dos o tres. UI-7. */
+  --f-xs: .75rem;    /* 12 */
+  --f-s: .875rem;    /* 14 */
+  --f-m: 1rem;       /* 16 — base */
+  --f-l: 1.125rem;   /* 18 */
+  --f-xl: 1.375rem;  /* 22 */
+  --f-2xl: 1.75rem;  /* 28 */
+  --f-3xl: 2.25rem;  /* 36 */
+
+  /* EDITORIAL ÚNICAMENTE. El registro operativo no los usa: un panel de trabajo
+     no tiene tipografía de 110px. UI-6. */
+  --f-display: clamp(2.5rem, 5vw, 4rem);
+  --f-display-l: clamp(3rem, 8vw, 6rem);
+
+  /* Interlineado. Cruza 1.0 hacia los ~40px: cuanto más grande el texto, más
+     apretado. Hoy hay 7 valores sueltos y la mayoría hereda el 1.5 del body. */
+  --i-apretado: 1.1;    /* display */
+  --i-titulo: 1.25;
+  --i-cuerpo: 1.5;
+  --i-denso: 1.35;      /* micro, 12-13px */
+
+  /* Tracking. Negativo creciente al subir de tamaño; positivo en versalitas.
+     La razón: el espacio óptico se abre al escalar y se cierra al reducir, así
+     que un titular grande y un eyebrow pequeño alcanzan la misma densidad
+     percibida por caminos opuestos. */
+  --tr-display: -.03em;
+  --tr-titulo: -.015em;
+  --tr-cuerpo: 0;
+  --tr-versalita: .12em;
+
+  /* Familia. DECISIÓN. Hasta el 2026-10-14 ni este archivo ni ESTANDAR_UI.md fijaban
+     una, y sin ella Chrome pinta Times New Roman: `patrones/tabla` la tecleaba en su
+     propia hoja con la nota «si la flota decide una, va en interfaz.css». Se decide
+     aquí, una vez. Sólo fuentes DEL SISTEMA, a propósito: una fuente web es una
+     petición más a un tercero (CSP, red interna de CONAF sin salida, licencia) y la
+     del sistema ya está hinteada para la pantalla de cada quien. Títulos y texto
+     comparten familia; en Windows el título toma el corte «Display», que está hecho
+     para tamaños grandes. */
+  --fuente-texto: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --fuente-titulo: 'Segoe UI Variable Display', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --fuente-mono: ui-monospace, 'Cascadia Mono', SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Ancho del contenido. DECISIÓN: el que `patrones/tabla` ya usaba para un listado
+     en un escritorio de 1366 px (el operativo es desktop-primero, §8.1). Antes era un
+     literal en esa hoja; ahora lo comparte el marco de toda aplicación. */
+  --ancho-contenido: 72rem;
+
+  /* Medida de línea. Por encima de ~75 caracteres el ojo pierde el renglón al
+     volver. DECISIÓN, umbral tipográfico clásico. */
+  --medida: 68ch;
+  --medida-estrecha: 46ch;
+
+  /* ── Radio ─────────────────────────────────────────────────────────────────
+     DECISIÓN. Cuatro pasos y el círculo. Hoy hay nueve, con pares que no se
+     distinguen a simple vista (2 y 3; 6 y 7).
+     LEY: el radio se calibra contra el PADDING interior, no contra el ancho.
+     Regla práctica: radio ≈ padding × 0,6. */
+  /* ── Toque ─────────────────────────────────────────────────────────────────
+     DECISIÓN con fuente. Área mínima que recibe un toque, medida sobre el área
+     del evento (min-height / min-width), NO sobre el tamaño visual. WCAG 2.5.5
+     (AAA) fija 44; WCAG 2.2 · 2.5.8 (AA) fija 24 como suelo. Se adopta 44 porque
+     la referencia ya lo hace —coipo_prensa2 midió 27 elementos por debajo a
+     390 px, entre ellos los enlaces de la barra a 34 × 36— y porque es el mismo
+     número de las guías de Apple. Exentos: los enlaces en línea dentro de un
+     párrafo, que 2.5.8 exceptúa. Se aplica bajo `(pointer: coarse)`, no por
+     ancho. ESTANDAR_UI.md §8.3. */
+  --toque-min: 44px;
+
+  --r-s: 4px;
+  --r-m: 8px;
+  --r-l: 16px;
+  --r-pill: 999px;
+  --r-circulo: 50%;
+
+  /* ── Elevación ─────────────────────────────────────────────────────────────
+     DERIVADO del verde institucional. offsetY ≈ blur/3, spread 0, alfa 8-14%.
+     TEÑIDAS, nunca negras: una sombra negra sobre un fondo cálido produce un
+     halo gris sucio. Hoy hay 4 sombras y sólo 2 son elevación real; las otras
+     dos son bordes simulados. */
+  --s-1: 0 2px 6px rgba(6, 73, 40, .08);      /* control                */
+  --s-2: 0 6px 18px rgba(6, 73, 40, .10);     /* tarjeta elevada        */
+  --s-3: 0 12px 36px rgba(6, 73, 40, .12);    /* panel flotante, popover*/
+  --s-4: 0 24px 72px rgba(6, 73, 40, .14);    /* modal                  */
+
+  /* ── Capas ─────────────────────────────────────────────────────────────────
+     DECISIÓN. Cinco capas nombradas. Hoy hay DOS valores en toda la aplicación
+     (5 y 100) y ninguna capa para modal, popover ni aviso: el que necesite una
+     la inventará en un `style` inline, que es como empieza la guerra de z-index. */
+  --z-base: 0;
+  --z-barra: 100;
+  --z-desplegable: 200;
+  --z-modal: 300;
+  --z-aviso: 400;
+
+  /* ── Movimiento ────────────────────────────────────────────────────────────
+     UNA SOLA CURVA en todo el sistema. Entrega el 82% de la distancia en el
+     primer 26% del tiempo: se lee como peso lanzado que se asienta, no como
+     objeto que frena. Hoy la flota no declara ninguna: usa el `ease` por
+     defecto. UI-8.
+     Las duraciones se eligen por DISTANCIA RECORRIDA, no por importancia: un
+     botón que crece 7px y un panel que recorre 400 no pueden durar lo mismo. */
+  --curva: cubic-bezier(.16, .85, .2, 1);
+  --t-micro: .2s;    /* hover, foco: sin desplazamiento real   */
+  --t-local: .35s;   /* elemento local, decenas de px          */
+  --t-capa: .5s;     /* overlay, drawer, cambio de vista       */
+
+  /* ── Foco ──────────────────────────────────────────────────────────────────
+     Un TOKEN, no una receta por selector. Hoy hay 3 recetas distintas, 5 valores
+     de outline-offset (-3, -2, 1, 2, 3) y 3 anchos, sin ninguna variable. Y el
+     anillo actual falla: `--verde` sobre la tarjeta oscura da 2,99:1, por debajo
+     del 3:1 que exige WCAG 2.4.11. UI-10. */
+  --foco-color: var(--verde-institucional);
+  --foco-ancho: 3px;
+  --foco-separacion: 2px;
+
+  /* ── Objetivo táctil ───────────────────────────────────────────────────────
+     WCAG 2.5.5. El área pulsable puede ser mayor que el dibujo: un botón de 24px
+     se agranda con un ::before transparente, sin tocar su diámetro visible. */
+  --tactil-minimo: 44px;
+}
+
+/* ── Tema oscuro ─────────────────────────────────────────────────────────────
+   Se redefine TODO token de color que se use como texto, borde o anillo de foco.
+   Un token que no se redefine y cae por debajo de 4,5:1 (texto) o 3:1 (borde y
+   foco) es un defecto, no una omisión: hoy hay SEIS sin redefinir en producción,
+   y el peor da 1,38:1. UI-3.
+
+   Los dos selectores son obligatorios y llevan lo mismo: el explícito para quien
+   eligió el tema, y la consulta de medio para quien no eligió.
+
+   Los ratios de cada valor están al lado, medidos contra las dos superficies
+   del propio tema oscuro. Y ninguno de ellos es un color del banner: los
+   medidos —`#064928`, `#15301d`, `#5e8f19`— son correctos SOBRE LA SUPERFICIE
+   DEL BANNER y sólo ahí. `#064928` sobre la tarjeta oscura da 1,38:1. */
+[data-theme='oscuro'] {
+  --fondo: #1a1f1c;
+  --superficie: #232b27;
+  --texto: #e8eae9;          /* 13,83 sobre fondo · 12,01 sobre superficie */
+  --texto-tenue: #aab4ae;    /*  7,84 ·  6,81 */
+  --borde-sutil: #2f3a34;
+  --borde-control: #717e77;  /*  3,94 ·  3,42 — sigue cumpliendo 1.4.11 */
+  --deshabilitado: #5a655f;
+
+  --verde-institucional: var(--verde-interfaz-oscuro);  /* 6,41 · 5,57 */
+  --foco-color: var(--verde-interfaz-oscuro);
+
+  --error: #f08a7a;   /* 6,86 · 5,96 */
+  --aviso: #e8b23f;   /* 8,65 · 7,52 */
+  --info: #7ab8e0;    /* 7,77 · 6,75 */
+}
+
+/* Y lo mismo para quien no eligió tema y su sistema está en oscuro. Se repite
+   entero en vez de encadenar selectores: `@media` y `[data-theme]` no se pueden
+   combinar en una sola regla sin que uno de los dos deje de aplicar. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='claro']) {
+    --fondo: #1a1f1c;
+    --superficie: #232b27;
+    --texto: #e8eae9;
+    --texto-tenue: #aab4ae;
+    --borde-sutil: #2f3a34;
+    --borde-control: #717e77;
+    --deshabilitado: #5a655f;
+
+    --verde-institucional: var(--verde-interfaz-oscuro);
+    --foco-color: var(--verde-interfaz-oscuro);
+
+    --error: #f08a7a;
+    --aviso: #e8b23f;
+    --info: #7ab8e0;
+  }
+}
+
+/* El lienzo. Sin esto los tokens existen y no los usa nadie. */
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: var(--f-m);
+  line-height: var(--i-cuerpo);
+
+  /* Lo que el tema oscuro NO puede pintar con tokens: las barras de scroll, los
+     desplegables nativos de `<select>`, el calendario de `<input type=date>` y
+     el relleno automático del navegador. Sin esta línea, una aplicación en tema
+     oscuro tiene barras y desplegables blancos — el defecto que delata que el
+     oscuro está pintado por encima en vez de declarado. */
+  color-scheme: light dark;
+  font-family: var(--fuente-texto);
+}
+
+/* ── Tipografía base ─────────────────────────────────────────────────────────
+   Los títulos toman la familia, el interlineado y el tracking de la escala, no el
+   1.5 del cuerpo. NO se tocan márgenes ni tamaños: cada vista decide los suyos con
+   los tokens (UI-6 separa el display editorial del operativo). `balance` reparte un
+   título de dos líneas en dos mitades parecidas en vez de dejar una palabra huérfana;
+   `pretty` evita la huérfana al final de un párrafo. Un navegador que no los conoce
+   los ignora sin efecto. */
+h1, h2, h3, h4 {
+  font-family: var(--fuente-titulo);
+  line-height: var(--i-titulo);
+  letter-spacing: var(--tr-titulo);
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+code, kbd, samp, pre {
+  font-family: var(--fuente-mono);
+}
+
+/* ── Superficies del navegador ───────────────────────────────────────────────
+   Lo que nadie dibuja también se ve: la selección, el cursor de texto, los
+   checkbox y radio nativos, la barra de desplazamiento y las cifras. Sin esto
+   salen con el azul genérico del sistema, que no pertenece a la paleta. */
+:root {
+  accent-color: var(--verde-institucional);
+  caret-color: var(--verde-institucional);
+  scrollbar-color: var(--borde-control) transparent;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--verde-institucional) 22%, transparent);
+  color: var(--texto);
+}
+
+/* Cifras de ancho fijo donde se comparan: tablas, datos y montos no «bailan». */
+table, .cifra, time {
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  text-underline-offset: .2em;
+  text-decoration-thickness: from-font;
+}
+
+/* ── El marco de la aplicación ───────────────────────────────────────────────
+   Banner arriba, contenido al centro, pie abajo, y el pie pegado al fondo aunque la
+   vista tenga poco contenido (sin esto un estado vacío deja el pie a media pantalla).
+   El banner NO se fija (BannerInstitucional.jsx, prohibición 3).
+
+   `#raiz` es el `<div>` de index.html donde monta React. Los landmarks quedan como
+   hermanos: <header> fuera de <main>, que es lo que `verify-banner.mjs` exige para
+   que el banner sea landmark `banner`, y <footer> también fuera, para que sea
+   `contentinfo`. */
+#raiz {
+  min-block-size: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+.contenido {
+  flex: 1 0 auto;
+  inline-size: 100%;
+  box-sizing: border-box;
+}
+
+.pie-institucional {
+  padding: var(--e-5) var(--e-5) var(--e-6);
+  border-block-start: 1px solid var(--borde-sutil);
+  color: var(--texto-tenue);
+  font-size: var(--f-s);
+  line-height: var(--i-denso);
+}
+
+.pie-institucional-interior {
+  max-inline-size: var(--ancho-contenido);
+  margin-inline: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--e-2) var(--e-5);
+}
+
+.pie-institucional p {
+  margin: 0;
+}
+
+/* ── El salto al contenido ───────────────────────────────────────────────────
+   Primer elemento focalizable de la página, y el único atajo que tiene quien
+   navega con teclado para no recorrer la cabecera entera en cada vista.
+
+   ESTABA EN `App.jsx` DESDE EL PRINCIPIO Y SIN UNA SOLA LÍNEA DE CSS, así que se
+   pintaba como un enlace normal arriba del todo, en todas las páginas de toda
+   aplicación sembrada. Se veía tan mal que lo previsible era que alguien lo
+   borrara — y con él, el atajo.
+
+   No se oculta con `display:none` ni con `visibility:hidden`: las dos lo sacan
+   del orden de tabulación y entonces no existe para nadie. Se saca de la vista y
+   vuelve al enfocarlo. */
+.salto-al-contenido {
+  position: absolute;
+  left: var(--e-4);
+  top: calc(-1 * var(--e-8));
+  z-index: 100;
+  padding: var(--e-2) var(--e-4);
+  background: var(--fondo);
+  color: var(--texto);
+  border-radius: var(--r-s);
+  text-decoration: underline;
+  transition: top var(--t-micro) var(--curva);
+}
+
+.salto-al-contenido:focus-visible {
+  top: var(--e-4);
+}
+
+/* ── El anillo de foco, una sola vez ─────────────────────────────────────────
+   Va aquí y no en cada componente. Se declara ANTES que cualquier otro estilo de
+   foco para que un componente pueda especializarlo, nunca sustituirlo por nada.
+   `outline: 0` sin reemplazo es un defecto de accesibilidad, no una decisión de
+   estilo. UI-10. */
+:focus-visible {
+  outline: var(--foco-ancho) solid var(--foco-color);
+  outline-offset: var(--foco-separacion);
+  border-radius: var(--r-s);
+}
+
+/* ── Movimiento reducido ─────────────────────────────────────────────────────
+   Apaga TODO, no una transición. Hoy el bloque de producción desactiva una sola
+   y deja ocho vivas. UI-15.
+
+   `!important` es obligatorio y no es pereza: si el movimiento lo escribe el JS
+   como estilo inline, una regla sin `!important` no lo alcanza. Y `opacity: 1`
+   no es cosmético: si una propiedad ligada al scroll deja de escribirse porque
+   el JS se cortocircuitó, su valor de reposo se queda fijo, y un elemento puede
+   quedar al 12% de opacidad PARA SIEMPRE. Es accesibilidad funcional. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Higiene táctil ──────────────────────────────────────────────────────────
+   Fuera de toda consulta de medio, a propósito. */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Puntos de corte ─────────────────────────────────────────────────────────
+   LA ÚNICA ESCALA DE ESTE ARCHIVO QUE NO ES UN TOKEN, porque una consulta
+   `@media` no puede leer una custom property. Por eso es una lista escrita, y se
+   cita por NOMBRE en un comentario junto a cada uso. ESTANDAR_UI.md §8.2.
+
+       teléfono   (max-width: 559.98px)    MEDIDO: sembrar.py UMBRAL_ASSET_CORTO.
+                                           Por debajo, el banner largo (17,13:1)
+                                           deja de leerse y se cambia al corto.
+       tableta    (max-width: 767.98px)    heredado del uso: rejilla → 1 columna
+       columna    (max-width: 899.98px)    heredado del uso: 2 columnas → 1
+       ancho      (max-width: 1399.98px)   causa medida: 9 ítems de navegación
+                                           no caben en un portátil de 1366
+
+   Una sola dirección, `max-width`: el registro OPERATIVO es desktop-primero y
+   mobile-seguro (§8.1). Y siempre con `.98`: `(max-width: 560px)` y
+   `(min-width: 560px)` aplican LOS DOS a 560, y un viewport con zoom puede medir
+   559,5. Las dos centésimas dejan un hueco que ningún navegador reporta.
+
+   La referencia tenía SIETE cortes distintos para esto, incluida la pareja
+   559.98/560 en el mismo repositorio que documenta por qué no hacerlo. Es la
+   enfermedad de «22 tamaños de fuente» del §3, en otro eje. */
+
+/* En iOS, un campo con fuente menor de 16px hace que el navegador amplíe al
+   enfocarlo, y NO revierte el zoom al salir. La solución NO es
+   `maximum-scale=1`: eso impide al usuario ampliar y es un fallo de WCAG 1.4.4. */
+@media (hover: none) and (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: max(16px, var(--f-m));
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+}

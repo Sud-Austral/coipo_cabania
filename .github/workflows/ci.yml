@@ -1,0 +1,325 @@
+# La suite, en cada rama y en cada pull request.
+#
+# LAS VERSIONES DE AQUÍ TIENEN QUE SER LAS DE LOS DOCKERFILE
+# ==========================================================
+# Si el CI prueba con Python 3.11 y la imagen construye con 3.14, el CI está
+# verde sobre un runtime que no se despliega. No es hipotético: `coipo_prensa2`
+# corre su CI en 3.11 mientras sus imágenes construyen 3.13 y 3.14, y
+# `COIPO_ENTREGA_PLANTA` prueba con Node 20 mientras su Dockerfile usa Node 22.
+# La regla `CI-1` de los jueces compara estas dos cosas.
+#
+# `pytest -m t0` Y NO `pytest` A SECAS
+# ====================================
+# `t0` es el tier que entra en la compuerta, con presupuesto de 600 s. Un test
+# sin tier no corre nunca aquí, nadie lo nota, y su estado permanente pasa a ser
+# «no ejecutado, verde». `pytest.ini` lo hace imposible: la taxonomía es
+# obligatoria y `conftest.py` la verifica en la recolección.
+#
+# UN SKIP ES UN FALLO. Lo hace cumplir `pytest_sessionfinish` de `conftest.py`,
+# no este archivo. Los tests de inmutabilidad y concurrencia de
+# `COIPO_ENTREGA_PLANTA` llevan meses «skipped, verde» por un `skipif` sobre una
+# variable que ningún CI define.
+#
+# POR QUÉ ADEMÁS ES `workflow_call`
+# =================================
+# Para que `deploy.yml` pueda ESPERARLO. Hasta el 2026-09-15 la suite y el
+# despliegue eran dos workflows independientes disparados por el mismo push: el
+# despliegue sólo tenía `needs: verificar`, y `verificar` son los jueces en modo
+# advisory, que por definición no fallan nunca. O sea que un push con la suite en
+# rojo se desplegaba igual — y el despliegue hace `rsync --delete` sin rollback.
+#
+# POR QUÉ ESTA SUITE CORRE EN `conaf-ci` Y NO EN `ubuntu-latest`
+# =============================================================
+# La organización está en plan Free: 2.000 min/mes de Actions, y sólo los
+# repositorios PRIVADOS los gastan. En septiembre de 2026 se gastaron 2.083 y la
+# cuota se agotó. Un job sin cuota no se pone rojo por el código: NO ARRANCA.
+# GitHub le deja el runner vacío, cero pasos, y esta anotación:
+#
+#   «The job was not started because recent account payments have failed or your
+#    spending limit needs to be increased.»
+#
+# EL MECANISMO, que es el motivo del cambio: `deploy.yml` tiene
+# `suite: uses: ./.github/workflows/ci.yml` y `deploy: needs: [verificar, suite]`.
+# Una suite que no arranca no es una compuerta que dice no: es un despliegue que
+# no ocurre.
+#
+# LO QUE DE VERDAD PASÓ el 2026-09-29, contado con el estado exacto en vez de con
+# un «no se pudo desplegar» que mezcla dos cosas. Las dos primeras aplicaciones
+# sembradas con este esqueleto nacieron con los tres jobs de su `ci.yml` sin
+# arrancar —el `ci.yml` de `coipo_visor_saff` era byte a byte idéntico a este
+# archivo—, pero el despliegue se detuvo en cada una por una razón DISTINTA:
+#
+#   · `coipo_visor_saff`: su `deploy` salió **skipped**, y no por el `needs:`
+#     sino por su propio `if: vars.SERVIDOR_LISTO == 'true'` — esa variable no
+#     existe en ese repositorio, deliberadamente, porque vm2 no tiene su `.env`.
+#     Rojo el run, sí; bloqueado por la suite, todavía no.
+#   · `coipo_visor_sidco`: llegó a desplegar a vm2 y murió en el primer paso del
+#     reusable, «falta /opt/apps/coipo_visor_sidco/.env». Y llegó porque le
+#     habían amputado el job `suite` del `needs:` para sortear el rojo — que es
+#     el daño de verdad, y está contado en la §18 de
+#     `docs/APRENDIZAJES-DE-ACTIONS.md`.
+#
+# O sea: el rojo por cuota no fue lo que impidió el despliegue en ninguna de las
+# dos. Fue lo que empujó a desmontar la compuerta en una, y lo que enterró el
+# aviso de servidor no listo en la otra. La avería es esa, no la que se lee de un
+# «CI rojo».
+#
+# ESTA FÁBRICA NO SIEMBRA APLICACIONES PÚBLICAS, y no es una preferencia
+# ---------------------------------------------------------------------
+# Aquí decía «si la aplicación es pública, devuelve esto a `ubuntu-latest`». Era
+# un consejo que no funciona, y conviene saber por qué en vez de repetirlo: una
+# aplicación pública no puede desplegar de ninguna manera, porque el reusable que
+# despliega —`Sud-Austral/infra-docker-base`— es un repositorio PRIVADO y su
+# `runs-on` es `[self-hosted, conaf-prod]` fijo. Cambiar el `runs-on` de este
+# archivo no arregla nada: deja el CI verde y el despliegue imposible.
+#
+# La precondición, nombrada para que sea comprobable: el repositorio de una
+# aplicación de la flota se crea PRIVADO. `docs/COMO-USAR-LA-FABRICA.md` lo hace
+# con `gh repo create Sud-Austral/<nombre> --private --clone` en sus tres pasos
+# (19, 303, 639). Si alguien hace pública una aplicación sembrada, lo que hay que
+# arreglar es la visibilidad, no el `runs-on`.
+#
+# Y lo que NO se toca: `allows_public_repositories` en el grupo de runners sigue
+# en `False`. Activarlo permitiría a cualquiera bifurcar un repositorio público y
+# ejecutar su código en vm3. Un repositorio público que pide un runner propio no
+# falla: se queda ENCOLADO para siempre, hasta que alguien lo cancela — medido.
+# Es exactamente lo que le pasa a `coipo_jueces`, que es público. Ver §2 de
+# `docs/APRENDIZAJES-DE-ACTIONS.md`.
+
+name: CI
+
+on:
+  push:
+    branches: [main, uat]
+  pull_request:
+  workflow_call:
+
+# UNA COLA DE TRES PLAZAS NO PERDONA LO QUE UNA DE PAGO SÍ PERDONABA
+# ==================================================================
+# En `ubuntu-latest` cada job traía su máquina: dos pushes seguidos costaban el
+# doble de cuota y nada más. En `conaf-ci` hay TRES procesos de runner en vm3
+# para toda la flota, y un push a `main` de esta aplicación pide ocho jobs de esa
+# etiqueta (los tres de `ci.yml` por el `push:`, los tres del `suite` que
+# `deploy.yml` llama, el `verificar` de `deploy.yml` y el `aviso-servidor`). Sin
+# esto, empujar dos veces en un minuto deja al siguiente esperando — y «no puedo
+# desplegar» vuelve por la puerta de la cola en vez de por la de la cuota.
+#
+# La forma es la que ya corre en `coipo_api`, no una inventada aquí. Y
+# `cancel-in-progress` va condicionado a `pull_request` A PROPÓSITO: en `main` y
+# en `uat` no se cancela nada, porque son las ramas que despliegan y cancelar un
+# run a medias deja el `rsync --delete` del reusable sin terminar.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  # LAS MISMAS que backend/Dockerfile y frontend/Dockerfile. Si cambias una,
+  # cambia la otra: es lo que comprueba CI-1.
+  VERSION_PYTHON: "3.14"
+  VERSION_NODE: "26"
+
+jobs:
+  backend:
+    runs-on: conaf-ci
+    # `conaf-ci` ejecuta un job a la vez por proceso de runner y el default de
+    # GitHub son 360 min: sin techo, un cuelgue aquí encola todos los despliegues
+    # que vengan detrás. El techo acota el daño; no hace que el despliegue ocurra.
+    #
+    # DE DÓNDE SALE EL 25, que no es un número redondo elegido a ojo: este job
+    # corre pytest DOS veces —el núcleo y luego la compuerta t0— y el presupuesto
+    # declarado de t0 son 600 s. 600 + 600 + ~180 de `pip install` y arranque del
+    # Postgres = 1.380 s = 23 min en el peor caso permitido. Un techo de 15 min
+    # habría puesto en rojo un job que se estaba portando según su contrato.
+    # Lo medido hoy es mucho menor (decenas de segundos), pero el techo se deriva
+    # del presupuesto, no de la medición: la medición dice lo que pasa, el
+    # presupuesto dice lo que está permitido que pase.
+    #
+    # Y no cuenta el tiempo ENCOLADO, sólo el de ejecución — comprobado con un
+    # job real que esperó más que su propio techo y salió verde. Así que una cola
+    # larga en `conaf-ci` no pone rojas las compuertas.
+    timeout-minutes: 25
+    services:
+      # Postgres 17 EFÍMERO, y de la misma mayor que el compartido (17.10).
+      #
+      # SQLite y las bases falsas están prohibidas, y no por purismo: los
+      # modelos ORM no declaran los CHECK que sí están en el SQL que se
+      # despliega, así que una suite contra un esquema creado por `create_all()`
+      # prueba una base que no existe en ninguna parte.
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: prueba
+          POSTGRES_PASSWORD: prueba
+          # `_test` NO es decoracion: CONGELADO/backend/tests/conftest.py exige ese
+          # sufijo (SUFIJO_OBLIGATORIO) y aborta la sesion entera con codigo 2 si el
+          # nombre no lo lleva -- es la guarda que impide correr la suite contra una
+          # base que no sea desechable. Hasta el 2026-09-08 aqui decia `prueba` y el
+          # backend de TODA aplicacion sembrada nacia rojo, sin recolectar un test.
+          POSTGRES_DB: prueba_test
+        options: >-
+          --health-cmd "pg_isready -U prueba"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+        # Puerto EFÍMERO, no `5432:5432` fijo. En `conaf-ci` corren varios procesos
+        # de runner en la misma máquina: con el puerto fijo, el segundo job que
+        # levanta este servicio choca con el primero y muere en el arranque del
+        # contenedor, antes de un solo log de la suite. Ya pasó el 2026-09-26 en
+        # `coipo_atraso_personal`. El puerto real se lee de
+        # `job.services.postgres.ports`.
+        #
+        # ESTO VA EN EL MISMO COMMIT QUE EL `runs-on`. Mover el runner sin mover
+        # el puerto no arregla nada: CREA el choque.
+        ports: ["5432"]
+    steps:
+      # UN PULL REQUEST DE DEPENDABOT NO SE EJECUTA EN vm3
+      # ==================================================
+      # Este job corre en `conaf-ci`, que es vm3: la máquina que sirve seis
+      # dominios de producción, aloja ~60 contenedores y guarda los
+      # `/opt/apps/*/.env` de TODA la flota. El usuario del runner está en el
+      # grupo `docker`, o sea root efectivo. Y el pago de la flota no vive en los
+      # secrets de Actions —no hay ninguno— sino en esos ficheros del disco: a
+      # quien ejecute aquí le basta `cat`, no necesita token. Por eso el
+      # endurecimiento que GitHub aplica a dependabot (token de sólo lectura, sin
+      # acceso a secrets) aquí no compra nada.
+      #
+      # Y un PR de dependabot SALE DE LA MISMA REPO, así que la guarda habitual
+      # contra bifurcaciones (`head.repo.full_name == github.repository`) lo deja
+      # pasar. Lo que hay que mirar es la RAMA, no el autor: así también cubre el
+      # caso de que una persona relance el PR a mano.
+      #
+      # `npm ci` ejecuta los scripts de ciclo de vida (preinstall/postinstall) de
+      # cada paquete salvo `--ignore-scripts`, y `pip install` desde un sdist
+      # ejecuta `setup.py`. O sea que un bump de versión automático y semanal
+      # basta para ejecutar código de un tercero en vm3. Este paso lo corta ANTES
+      # del checkout: el PR sale rojo y se revisa a mano, que es lo correcto.
+      #
+      # POR QUÉ UN PASO Y NO UNA EXPRESIÓN EN `runs-on:`. La forma
+      # `runs-on: ${{ startsWith(github.head_ref, 'dependabot/') && 'ubuntu-latest' || 'conaf-ci' }}`
+      # también funciona y manda el PR a un runner alojado, pero cuesta cuota y
+      # —medido con actionlint 1.7.12— APAGA la única comprobación que hoy pilla
+      # un error de tecleo en la etiqueta: con la etiqueta literal, un
+      # `conaf-ci-TYPO` sale con exit 1; dentro de una expresión, pasa
+      # inadvertido y el job se queda encolado para siempre.
+      - name: Un pull request de dependabot no se ejecuta en vm3
+        if: startsWith(github.head_ref, 'dependabot/')
+        run: |
+          echo "::error::Este PR instala dependencias de terceros y este job corre en vm3. Revísalo a mano o relánzalo a propósito en un runner alojado."
+          exit 1
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Puerto del Postgres efímero
+        run: echo "PG_PORT=${{ job.services.postgres.ports['5432'] }}" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: ${{ env.VERSION_PYTHON }}
+
+      - run: pip install -r backend/requirements.txt -r backend/requirements-dev.txt
+
+      # El núcleo primero y solo. Si esto falla, lo demás da igual, y así el
+      # fallo se lee en veinte segundos en vez de en diez minutos.
+      - name: Núcleo
+        working-directory: backend
+        run: pytest -m "nucleo and t0" -q
+        env:
+          DATABASE_HOST: 127.0.0.1
+          DATABASE_PORT: ${{ env.PG_PORT }}
+          DATABASE_USER: prueba
+          DATABASE_PASSWORD: prueba
+          DATABASE_NAME: prueba_test
+
+      - name: Compuerta (t0)
+        working-directory: backend
+        run: pytest -m t0 -q
+        env:
+          DATABASE_HOST: 127.0.0.1
+          DATABASE_PORT: ${{ env.PG_PORT }}
+          DATABASE_USER: prueba
+          DATABASE_PASSWORD: prueba
+          DATABASE_NAME: prueba_test
+
+  frontend:
+    runs-on: conaf-ci
+    # Aquí sí hay margen medido: este job tarda entre 25 y 157 s en `conaf-ci`
+    # (`npm ci` + build + chromium + banner). Los 15 min son red de seguridad,
+    # no presupuesto.
+    timeout-minutes: 15
+    steps:
+      # Misma guarda que en `backend`, y por la misma razón: este job corre
+      # `npm ci` en vm3. Ver el bloque largo de `backend`.
+      - name: Un pull request de dependabot no se ejecuta en vm3
+        if: startsWith(github.head_ref, 'dependabot/')
+        run: |
+          echo "::error::Este PR instala dependencias de terceros y este job corre en vm3. Revísalo a mano o relánzalo a propósito en un runner alojado."
+          exit 1
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: ${{ env.VERSION_NODE }}
+      # `npm ci` a secas, sin `|| npm install`: el lock esta versionado (lo genera y lo
+      # comprueba el CI de la fabrica). El `||` convertia cualquier fallo de `npm ci`
+      # -- un lock desincronizado -- en una instalacion silenciosa que resolvia los
+      # rangos `^` de nuevo, que es justo lo que requirements-base.txt prohibe para
+      # Python. Sin lock, ademas, dependabot no puede abrir PRs.
+      - run: npm ci --no-audit --no-fund
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+      # Mide el banner PINTADO contra src/marca.json: el alto, el filete y el fondo
+      # sin imagen. Un componente correcto puede pintar mal: por eso mide en vez de
+      # leer. (El TEXTO superpuesto lo mide `verificar:titulo`, mas abajo.)
+      # verify-banner.mjs levanta chromium via playwright: sin este paso el
+      # import de 'playwright' resuelve pero el navegador no existe en el runner.
+      # Estaba planificado (borradores/PUERTAS.md) y no se llego a escribir.
+      #
+      # SIN `--with-deps`: el usuario del runner de `conaf-ci` NO tiene sudo sin
+      # contraseña (medido en vm3), así que `--with-deps` intenta instalar
+      # paquetes de apt, pide contraseña y el paso muere. Las 16 dependencias de
+      # sistema de chromium ya están en el anfitrión. Si algún día esto vuelve a
+      # un runner de GitHub, hay que devolver `--with-deps`.
+      - run: npx playwright install chromium
+        working-directory: frontend
+      - run: npm run verificar:banner
+        working-directory: frontend
+      # El texto superpuesto del banner NO TAPA LA MARCA NI PISA EL REMATE, y no lleva
+      # caja, y se lee (mide tinta y contraste sobre los pixeles pintados). Ejecuta la
+      # hoja real con un titulo largo en 10 anchos y, si hay dist/, tambien la aplicacion
+      # construida. Antes de T8 ninguna maquina miraba esto y la semilla hacia nacer a
+      # cada aplicacion con una caja opaca con "0.0.0" encima de la marca.
+      #
+      # `continue-on-error`: la comprobacion esta CALIBRADA solo para el headless shell
+      # que instala `npx playwright install chromium`. Corrio en verde en `conaf-ci`
+      # (Linux), en la CI de la fabrica, tambien la legibilidad en pixeles (2026-10-06: el
+      # texto de prueba cambia el 32-37 % de su cuadro y su contraste mediano es de
+      # 6,96-8,02:1 en Linux, 11-17 % y 9,15:1 en Windows). Lo que falta es verla en CADA
+      # aplicacion, que pinta su propio texto: las primeras corridas fijan su margen real.
+      # Se mide primero y se aprieta despues. Si sale roja, el job sigue en verde pero la
+      # anotacion avisa: miralo. Cuando `verify-banner.mjs` la absorba, este paso sobra.
+      - run: npm run verificar:titulo
+        working-directory: frontend
+        continue-on-error: true
+
+  jueces:
+    uses: Sud-Austral/coipo_jueces/.github/workflows/verificar.yml@v2
+    with:
+      modo: advisory
+      perfil: aplicacion
+      # En vm3, no en `ubuntu-latest`. Sin esta línea el juez se queda con el
+      # default del reusable —`ubuntu-latest`— y era el tercer job facturable de
+      # este archivo: `deploy.yml` ya lo pasaba y `ci.yml` se quedó atrás.
+      # El input existe desde v2.0.9; `@v2` apunta hoy a v2.0.10.
+      #
+      # NO AÑADAS `timeout-minutes` A ESTE JOB. Es un job `uses:`, y ahí
+      # `timeout-minutes` no es clave válida: GitHub rechaza el ARCHIVO COMPLETO,
+      # no el job — o sea que la aplicación se queda sin CI y sin vía de
+      # despliegue a la vez, y el run sale con cero jobs y con la ruta del
+      # archivo por nombre en vez de «CI». El techo de este job ya existe y vive
+      # donde tiene que vivir: `timeout-minutes: 10` dentro del propio
+      # `verificar.yml` de coipo_jueces. Ver §5 de
+      # `docs/APRENDIZAJES-DE-ACTIONS.md`.
+      runner: conaf-ci

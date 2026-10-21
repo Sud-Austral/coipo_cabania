@@ -1,0 +1,70 @@
+{
+  "_LEEME": "GENERADO por semilla/sembrar.py midiendo la cabecera del JPEG con identidad/medir_jpeg.py, mas la zona del titulo (clave `titulo`). NO SE EDITA A MANO. Si el asset cambia, se regenera desde la fabrica.",
+  "gerencia": "5_DESARROLLO_PERSONAS",
+  "etiqueta": "DESARROLLO_PERSONAS",
+  "nombreOficial": null,
+  "nombreOficialVerificado": false,
+  "largo": {
+    "archivo": "banner.jpg",
+    "origen": "identidad/5_banner_DESARROLLO_PERSONAS.jpg",
+    "ancho": 3032,
+    "alto": 177,
+    "razon": 17.1299,
+    "bytes": 72073,
+    "sha256": "a779c89613673e880fba20e09a7d21bea5cded843da2276a149ed155a844670b"
+  },
+  "corto": {
+    "archivo": "banner-corto.jpg",
+    "origen": "identidad/5_banner_DESARROLLO_PERSONAS_corto.jpg",
+    "ancho": 875,
+    "alto": 177,
+    "razon": 4.9435,
+    "bytes": 53276,
+    "sha256": "8c4e6a78d9a89771b04e4b0cee7f8f8182767ba3ceb351e7b8b8ac93aa618434"
+  },
+  "razon": 17.1299,
+  "altoMinimo": 68,
+  "altoMinimoEstado": "DECISION_DE_MAQUETA_NO_MEDIDA",
+  "viewportCruce": 1164.83,
+  "umbralAssetCorto": 560,
+  "colores": {
+    "campoPrincipal": "#064928",
+    "campoIzquierdo": "#15301d",
+    "remateDerecho": "#5e8f19"
+  },
+  "contraste": {
+    "blancoSobreCampoPrincipal": 10.55,
+    "blancoSobreCampoIzquierdo": 14.26,
+    "blancoSobreRemateDerecho": 3.88,
+    "_aviso": "Sobre el remate derecho no va texto, nunca: no alcanza 4,5:1 (AA para texto normal). Ver ESTANDAR_UI.md UI-5."
+  },
+  "titulo": {
+    "desdePx": 875,
+    "hastaPx": 2704,
+    "anchoAssetPx": 3032,
+    "estado": "MEDIDO_EL_2026-10-05_EN_LOS_7_ASSETS",
+    "_comoSeComprueba": "frontend/scripts/verificar-titulo.mjs vuelve a medir la marca, el campo plano y el remate sobre public/banner.jpg con sharp y exige que esta zona no toque ninguno. En la fabrica bloquea; en la aplicacion avisa (`continue-on-error`) hasta que se calibre el margen",
+    "_porQueHastaPx": "= remate (2744) - 40: el aire es DECISION DE MAQUETA, no una medida. Blanco sobre el remate da 3,88:1 y AA exige 4,5:1 (UI-5)",
+    "fuente": "medido el 2026-10-05 sobre identidad/*_banner_*.jpg: marca 669-819, campo plano 858/875-2743, remate desde 2744. Ver el comentario de TITULO_DESDE_PX en semilla/sembrar.py"
+  },
+  "filete": {
+    "fila": 2,
+    "_porQueFila2": "En y=0 el JPEG esta lavado por ringing: en banner3.jpg la fila 0 en x=200 da #b7393a y la 1 da #eb3d49. Un verificador que lea y=0 da por perdido un filete intacto.",
+    "toleranciaManhattan": 60,
+    "_porQueTolerancia": "El navegador reescala el JPEG y los valores se mueven unas unidades. El mismo filete esta registrado como #0e69b0/#eb3d49 en identidad/README.md y como #0c6bad/#f03c47 en implementacion_banner.md: distancia 7 y 8.",
+    "azul": [
+      12,
+      107,
+      173
+    ],
+    "rojo": [
+      240,
+      60,
+      71
+    ],
+    "estado": "MEDIDO_EN_banner3.jpg__SUPUESTO_PARA_EL_RESTO_DE_LA_FAMILIA",
+    "fuente": "identidad/implementacion_banner.md Anexo B (azul #0c6bad x 67-169; rojo #f03c47 x 170-283)"
+  },
+  "objectFitPermitido": false,
+  "_porQueObjectFitProhibido": "object-fit: cover sobre un asset tan apaisado amputa el filete superior, que es la parte que identifica a CONAF. El piso de altura se consigue con overflow:hidden y width:max(), que sólo recorta por la DERECHA."
+}

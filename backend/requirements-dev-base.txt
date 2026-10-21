@@ -1,0 +1,12 @@
+# Dependencias de desarrollo y CI — ARCHIVO CONGELADO DE LA SEMILLA.
+# NO se instalan en la imagen: la imagen de produccion no lleva pytest.
+
+pytest>=8.0,<10.0
+
+# `fastapi.testclient` lo necesita. Sin httpx, la fixture `cliente` de
+# conftest.py falla nombrandolo en vez de hacer skip -- a proposito: un test
+# saltado tiene el mismo color que uno que pasa.
+httpx>=0.28.1,<1.0
+
+# Auditoria de vulnerabilidades de las dependencias, en el CI.
+pip-audit>=2.10.1

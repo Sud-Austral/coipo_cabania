@@ -1,0 +1,6 @@
+# Dependencias de desarrollo y CI de ESTA aplicacion. NO van en la imagen.
+#
+# Igual que `requirements.txt`: la primera linea trae las congeladas de la
+# flota, debajo van las tuyas (factory-boy, freezegun, lo que sea).
+
+-r requirements-dev-base.txt

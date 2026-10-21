@@ -1,0 +1,170 @@
+/* Botón — la referencia de los OCHO ESTADOS.
+   ==========================================
+
+   No está aquí porque toda aplicación necesite este botón. Está aquí porque
+   `identidad/ESTANDAR_UI.md` exige en `UI-9` que todo componente interactivo
+   declare los ocho estados, y **un agente copia lo que ve, no lo que lee**.
+   Medido sobre la aplicación más avanzada de la flota: 34 familias de componente
+   × 8 estados = 272 celdas, y 62 implementadas (22,8 %). Ninguna familia tenía
+   las ocho; la mejor tenía tres. `:active` no existía en ningún selector.
+
+   Los ocho, y dónde está cada uno en este archivo:
+
+     1 reposo          `.boton`
+     2 hover           `.boton:hover:not(:disabled)`
+     3 focus-visible   heredado de `interfaz.css` — NO se redeclara aquí
+     4 activo          `.boton:active:not(:disabled)`
+     5 deshabilitado   `.boton:disabled`
+     6 cargando        `.boton[aria-busy='true']`
+     7 vacío           no aplica a un botón, y se dice en vez de callarlo
+     8 error           no aplica a un botón; vive en el campo y en el aviso
+
+   Declarar «no aplica» es parte de cumplir la regla. Un componente que se salta
+   dos estados en silencio es indistinguible de uno que se los olvidó. */
+
+.boton {
+  /* 1 · REPOSO */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-2);
+
+  /* El objetivo táctil de WCAG 2.5.5 es 44px, y aquí se cumple con el alto real
+     en vez de con un ::before transparente porque el botón ya lo alcanza. */
+  min-height: var(--tactil-minimo);
+  padding: var(--e-2) var(--e-4);
+
+  /* radio ≈ padding × 0,6 — la ley de la taxonomía de radios. 16 × 0,6 ≈ 8. */
+  border-radius: var(--r-m);
+  border: 1px solid transparent;
+
+  background: var(--verde-institucional);
+  color: var(--superficie);
+  font-size: var(--f-m);
+  font-weight: 600;
+  letter-spacing: var(--tr-cuerpo);
+  cursor: pointer;
+
+  /* Una sola curva en todo el sistema, y la banda `micro` porque no hay
+     desplazamiento real: sólo cambia el color. */
+  transition:
+    background var(--t-micro) var(--curva),
+    border-color var(--t-micro) var(--curva),
+    opacity var(--t-micro) var(--curva),
+    box-shadow var(--t-micro) var(--curva),
+    /* La presión necesita su propia curva corta: con `--t-micro` (200 ms) el botón
+       todavía se está hundiendo cuando el dedo ya se levantó. */
+    transform 160ms cubic-bezier(.23, 1, .32, 1);
+}
+
+/* 2 · HOVER. Oscurece la superficie sin mover el botón: un botón que se
+   desplaza al pasar por encima hace fallar el clic de quien tiene temblor. */
+.boton:hover:not(:disabled):not([aria-busy='true']) {
+  background: color-mix(in srgb, var(--verde-institucional) 88%, #000);
+}
+
+/* 3 · FOCUS-VISIBLE — deliberadamente AUSENTE.
+   Lo declara `interfaz.css` una sola vez para todo el documento, con el token
+   `--foco-color`, que cambia con el tema. Redeclararlo aquí es cómo se llega a
+   tres recetas distintas, cinco valores de `outline-offset` y tres anchos, que
+   es lo medido hoy en producción. Si un componente necesita un anillo distinto,
+   lo especializa; nunca lo sustituye por nada. UI-10. */
+
+/* 4 · ACTIVO. Contrae. Es la contrapartida del hover, que expande o aclara:
+   pulsar tiene que sentirse distinto de apuntar. */
+.boton:active:not(:disabled):not([aria-busy='true']) {
+  background: color-mix(in srgb, var(--verde-institucional) 78%, #000);
+  transform: scale(.97);
+}
+
+/* 5 · DESHABILITADO. `cursor: not-allowed` y no `pointer`: la forma del cursor
+   es la única señal que llega antes del clic. No se baja la opacidad del texto
+   por debajo de lo legible — WCAG 1.4.3 exceptúa lo inactivo, pero un botón
+   ilegible parece roto, no apagado. */
+.boton:disabled {
+  background: var(--deshabilitado);
+  color: var(--superficie);
+  cursor: not-allowed;
+}
+
+/* 6 · CARGANDO. `aria-busy` y no una clase: el estado tiene que llegar también
+   a quien usa lector de pantalla. El botón NO se deshabilita mientras carga —un
+   `disabled` saca el foco del elemento y el teclado se pierde—; se le quita el
+   puntero y se anuncia. */
+.boton[aria-busy='true'] {
+  cursor: progress;
+  opacity: .75;
+}
+
+.boton[aria-busy='true'] .boton-giro {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--r-circulo);
+  animation: boton-girar 1s linear infinite;
+}
+
+@keyframes boton-girar {
+  to { transform: rotate(360deg); }
+}
+
+/* El giro se apaga con el bloque universal de `interfaz.css`. Aquí sólo hay que
+   evitar que quede congelado a medias, que se ve peor que quieto. */
+@media (prefers-reduced-motion: reduce) {
+  .boton[aria-busy='true'] .boton-giro {
+    animation: none;
+    border-top-color: currentColor;
+    opacity: .5;
+  }
+}
+
+/* Variante secundaria: el borde SÍ identifica el componente, así que usa
+   `--borde-control`, que cumple el 3:1 de WCAG 1.4.11 en los dos temas —y no
+   `--borde-sutil`, que es un separador decorativo y no llega. */
+.boton.secundario {
+  background: transparent;
+  color: var(--verde-institucional);
+  border-color: var(--borde-control);
+}
+
+.boton.secundario:hover:not(:disabled):not([aria-busy='true']) {
+  background: color-mix(in srgb, var(--verde-institucional) 8%, transparent);
+  border-color: var(--verde-institucional);
+}
+
+.boton.secundario:disabled {
+  background: transparent;
+  color: var(--deshabilitado);
+  border-color: var(--deshabilitado);
+}
+
+/* TOQUE — UI-18 del anexo movil (ESTANDAR_UI.md §8.3).
+   Bajo puntero grueso el area que recibe el toque crece a `--toque-min` (44 px,
+   WCAG 2.5.5). Se crece por min-height/min-width, NO por font-size: el objetivo es
+   el area del evento, no el tamaño visual. Se detecta por el tipo de puntero y no
+   por el ancho: una tableta ancha sigue siendo tactil.
+   Y bajo `(hover: none)` el estado hover no ocurre nunca: este componente tiene que
+   seguir completo sin el, y lo esta -- ninguna accion depende de el. */
+@media (pointer: coarse) {
+  .boton {
+    min-height: var(--toque-min);
+    min-width: var(--toque-min);
+  }
+}
+
+/* RELIEVE — el botón principal es la acción más importante de la vista: lleva una
+   sombra corta y un brillo interior de 1 px arriba, que lo separan del fondo sin
+   volverlo un bloque plano. El secundario va sobre la superficie (no transparente),
+   así no «desaparece» sobre el fondo gris de la página. */
+.boton:not(.secundario):not(:disabled) {
+  box-shadow:
+    0 1px 2px rgba(6, 73, 40, .18),
+    inset 0 1px 0 rgba(255, 255, 255, .10);
+}
+
+.boton.secundario:not(:disabled) {
+  background: var(--superficie);
+  box-shadow: 0 1px 2px rgba(6, 73, 40, .06);
+}

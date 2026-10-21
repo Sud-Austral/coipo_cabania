@@ -1,0 +1,123 @@
+# FRAGMENTO CONGELADO DEL docker-compose.yml — el sobre de despliegue
+# ====================================================================
+# Este archivo NO es un compose completo: es el bloque `app` mas las reglas de raiz
+# que ninguna aplicacion puede cambiar. `semilla/sembrar.py` lo empalma con los
+# servicios propios del proyecto (backend, scheduler, y lo que el negocio pida) para
+# producir el docker-compose.yml de la app. Su sha256 vive en semilla.lock y el job
+# `semilla-intacta` del CI falla si alguien lo edita dentro de una aplicacion.
+#
+# Por que este pedazo esta congelado y el resto no: cada regla de abajo cierra un
+# fallo que YA ocurrio en esta flota. El juez j01 las verifica una por una sobre el
+# compose final (D-37, D-27, D-36).
+#
+#
+# LAS REGLAS DE RAIZ (aplican al docker-compose.yml COMPLETO, no solo a este bloque)
+# ---------------------------------------------------------------------------------
+#
+# R1. SIN `version:`.
+#     Compose v2+ la ignora y emite un aviso en cada `up`. El aviso entrena a la
+#     gente a no leer la salida del despliegue, que es justo donde aparece el error
+#     que importa. j01 la bloquea.
+#
+# R2. UN SOLO `ports:` en todo el archivo, y es el de `app`.
+#     El registro de puertos (registro/puertos.yaml, D-36) solo conoce APP_PORT. Un
+#     segundo puerto publicado es superficie que nadie registro y que puede colisionar
+#     con otra aplicacion de la misma VM sin que nada avise. COIPO_SEGUIMIENTO publica
+#     hoy `5432:5432`: el Postgres compartido de CONAF expuesto al mundo.
+#     El backend NO publica puerto: habla por la red interna de Docker.
+#
+# R3. NINGUN motor de base de datos en el compose.
+#     El Postgres 17.10 de esta flota es COMPARTIDO, vive fuera de Docker en
+#     172.31.2.40 y lo administra otro equipo. Una base propia en el compose queda
+#     fuera de los respaldos, de la retencion legal y del ledger de migraciones.
+#     Se conecta con las CINCO variables DATABASE_* (D-06), nunca con DATABASE_URL.
+#
+# R4. `context: .` (la raiz del repositorio) en todo `build:`, y por lo tanto
+#     `.dockerignore` en la raiz es OBLIGATORIO.
+#     COIPO_ENTREGA_PLANTA construye sus tres imagenes con `context: .` y no tiene
+#     `.dockerignore`: el repositorio entero -incluido `.git`, `INSUMO_*` y un MP4 de
+#     21 MB- viaja al daemon en cada build de cada imagen, y con el cualquier `.env`
+#     que este en el disco del servidor. Ver CONGELADO/.dockerignore.
+#
+# R5. `${VAR:?mensaje}` en cada variable OBLIGATORIA.
+#     Sin el guard, una variable ausente se interpola como cadena vacia y el
+#     contenedor arranca con una credencial en blanco: el fallo aparece despues, como
+#     error de autenticacion intermitente, y se diagnostica como problema de red.
+#     Con el guard, `docker compose up` falla en el acto diciendo QUE falta.
+#     `${VAR:-valor}` solo para lo que de verdad tiene un default sensato.
+#
+# R6. `healthcheck`, `mem_limit` y `restart:` en TODOS los servicios, sin excepcion.
+#     Sin healthcheck, `docker compose ps` dice "Up" de un proceso que no responde:
+#     coipo_cabania lleva dias `unhealthy` sin que nadie se entere (docs/OBSERVABILIDAD.md).
+#     Sin mem_limit, un servicio que se desboca se lleva por delante a TODAS las
+#     aplicaciones de la VM, incluidas las que nadie toco.
+#     AVISO DECLARADO: un `mem_limit` fijado sin medir la RAM real de la VM produce un
+#     OOM kill silencioso en produccion. El decreto exige que el limite EXISTA y este
+#     justificado, no un numero concreto inventado. Los valores de abajo son los del
+#     unico servicio que esta pieza define (nginx sirviendo estaticos), y estan
+#     medidos contra coipo_n8n, que corre el mismo `nginx:1.27-alpine` con 128m.
+#
+# R7. `interval: 5s` en los healthchecks.
+#     El reusable de despliegue hace `up -d`, `sleep 5`, `curl -sf .../health`. Con
+#     `interval: 30s` el `sleep 5` decide el resultado del despliegue. Con 5s, no.
+#
+# R8. Volumenes CON NOMBRE para el estado del contenedor; `./data/` en la raiz solo
+#     para lo que el rsync del reusable debe preservar.
+#     El reusable declara `data/` como el UNICO directorio protegido del `--delete`.
+#     Prohibir los bind-mounts por purismo contradice el contrato del pipeline que
+#     efectivamente despliega, y el resultado es perdida de datos en el siguiente
+#     despliegue. Todo lo demas va en volumen con nombre: vive fuera de /opt/apps/ y
+#     el rsync no lo alcanza.
+#
+# R9. `env_file: .env` en TODOS los servicios que lean configuracion.
+#     Un servicio sin `env_file:` no se recrea cuando cambia el `.env`. En coipo_n8n
+#     eso habria dejado al main y al worker con claves de cifrado distintas sin que
+#     nada lo avisara.
+
+services:
+
+  # El unico servicio que publica puerto. Sirve la SPA compilada y proxea al backend
+  # por la red interna de Docker (ver CONGELADO/frontend/nginx.conf).
+  #
+  # Se llama `app` y no `frontend` a proposito: es el nombre que el resto de la flota
+  # usa para "lo que publica APP_PORT", y el smoke test del despliegue lo busca por ese nombre.
+  app:
+    build:
+      # La raiz, no `frontend/`: el Dockerfile hace `COPY frontend/ ./` para que el
+      # contexto sea el mismo que el del backend y el .dockerignore de la raiz aplique
+      # a los dos. Ver R4.
+      context: .
+      dockerfile: frontend/Dockerfile
+    # UNICO `ports:` del archivo (R2). Con guard y no con `${APP_PORT:-8080}`: un
+    # default silencioso aqui es exactamente como se produce una colision de puertos
+    # entre dos aplicaciones de la misma VM. El puerto lo reserva un PR a
+    # registro/puertos.yaml (D-36) y el paso de preparacion del despliegue comprueba en la VM que este libre.
+    ports:
+      - "${APP_PORT:?falta APP_PORT en .env - se reserva por PR a registro/puertos.yaml (D-36)}:8000"
+    depends_on:
+      # A SECAS, jamas `condition: service_healthy`.
+      #
+      # Con la condicion, si el backend no llega a sano el contenedor `app` se queda en
+      # estado "created" y `docker compose ps` NO LO MUESTRA: el smoke test del
+      # despliegue recibe connection-refused desde un contenedor invisible, que es el
+      # peor mensaje de error posible. A secas, nginx siempre esta arriba y el smoke
+      # test recibe un 502 diagnosticable, con el `docker compose logs backend` al lado.
+      # Es la eleccion de coipo_n8n, y esta hecha a sabiendas.
+      - backend
+    healthcheck:
+      # Contra SU PROPIA raiz estatica, no contra /health del backend. Este healthcheck
+      # responde "nginx sirve", no "el sistema entero funciona": si preguntara por el
+      # backend, una caida del backend marcaria `app` como unhealthy y se perderia la
+      # unica pieza capaz de devolver un 502 con explicacion.
+      #
+      # Con `wget` de busybox, que nginx:alpine SI trae; `curl` NO esta garantizado en
+      # las imagenes alpine (misma trampa ya pagada con MinIO en coipo_archivo).
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8000/"]
+      interval: 5s          # R7
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    # nginx sirviendo estaticos. Medido contra coipo_n8n, que corre el mismo
+    # nginx:1.27-alpine con 128m desde 2026-08 sin un solo OOM.
+    mem_limit: 128m
+    restart: unless-stopped

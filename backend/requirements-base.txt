@@ -1,0 +1,36 @@
+# Dependencias de ejecución del backend — ARCHIVO CONGELADO DE LA SEMILLA.
+#
+# Rangos, no pines exactos. `coipo_dendroenergia` fija versiones exactas y el
+# resultado es que nadie las sube nunca; `coipo_prensa2` usa rangos con techo de
+# mayor y se mantiene al día sin romperse. Se sigue el segundo.
+#
+# El techo `<N.0` de cada línea NO es adorno: un mayor nuevo puede cambiar el
+# comportamiento sin previo aviso, y el despliegue de esta flota reconstruye la
+# imagen en cada push. Sin techo, un `docker compose build` de un martes
+# cualquiera puede traer una versión mayor que nadie probó.
+
+fastapi>=0.141.1,<1.0
+uvicorn[standard]>=0.52.4,<1.0
+sqlalchemy>=2.0.52,<2.2
+# psycopg v3, NO psycopg2-binary.
+#
+# `referencia/fastapi-postgresql-conexion.md` lo dice explícitamente: para
+# proyectos nuevos conviene psycopg v3, que es el que recomienda SQLAlchemy 2.x
+# y el que se mantiene. La URL cambia y por eso está compuesta en
+# `app/composicion/ajustes.py` como `postgresql+psycopg://...`; con psycopg2
+# sería `postgresql://...` a secas, y mezclarlas da un error de driver que no
+# dice cuál es el problema.
+psycopg[binary]>=3.2,<4.0
+
+python-dotenv>=1.2.3,<2.0
+
+# Cliente del IAM. Se prefiere a `urllib` de la stdlib porque urllib sólo admite
+# UN timeout global, y aquí hace falta separar el de conexión del de lectura: un
+# IAM colgado no puede quedarse con un hilo del threadpool indefinidamente.
+httpx>=0.28.1,<1.0
+
+# Firma de la cookie de `state` del OAuth y de la cookie de sesión (patrón BFF).
+# Un módulo, cero dependencias, mantenido por Pallets. Se descartó
+# `starlette.SessionMiddleware` porque sólo admite un TTL absoluto, y el esquema
+# de esta flota es deslizante + absoluto.
+itsdangerous>=2.2,<3.0

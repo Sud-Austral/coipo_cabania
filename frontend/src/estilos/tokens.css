@@ -1,0 +1,46 @@
+/* Tokens de geometría del banner — GENERADO por semilla/sembrar.py.
+   ==================================================================
+
+   Cada número de aquí sale de `src/marca.json`: o es una MEDIDA del JPEG de esta
+   gerencia (la razón de aspecto), o una zona que se midió una vez sobre los siete.
+   Los que son decisión de maqueta lo dicen.
+
+   QUIÉN VIGILA QUÉ. `scripts/verify-banner.mjs` compara el alto PINTADO contra
+   `src/marca.json`, o sea lo que dependa de `--razon-banner` y `--alto-minimo`; NO
+   mira la zona del título. Esa la comprueba `scripts/verificar-titulo.mjs` contra el
+   JPEG (`--ancho-asset`, `--titulo-desde`, `--titulo-hasta`): en la fábrica bloquea,
+   en la aplicación avisa mientras se calibra el margen.
+
+   NO SE EDITA A MANO: lo escribe `semilla/sembrar.py`. Si el asset cambia, hay
+   que regenerarlo desde la fábrica. */
+
+:root {
+  /* Razón de aspecto del asset largo: 3032 / 177.
+     Decide el ancho de cruce por debajo del cual la imagen deja de encoger. */
+  --razon-banner: 17.1299;
+
+  /* Piso de altura. Es lo ÚNICO de este archivo que no es una medida: en
+     marca.json va marcado `DECISION_DE_MAQUETA_NO_MEDIDA`.
+     Por debajo de este alto la marca deja de leerse. */
+  --alto-minimo: 68px;
+
+  /* La ZONA DEL TÍTULO, en px DEL ASSET y SIN UNIDAD (una unidad rompería el
+     `calc()` de BannerInstitucional.css, que los divide por --ancho-asset y los
+     multiplica por el ancho al que se PINTA la imagen):
+
+       --ancho-asset   ancho del JPEG largo.
+       --titulo-desde  donde EMPIEZA el campo plano. A su izquierda está la marca.
+       --titulo-hasta  donde se corta el texto: el remate decorativo empieza en
+                       2744 y se dejan 40 px de aire (decisión de
+                       maqueta). Blanco sobre el remate no llega a 4,5:1 (UI-5). */
+  --ancho-asset: 3032;
+  --titulo-desde: 875;
+  --titulo-hasta: 2704;
+
+  --banner-campo-principal: #064928;
+  --banner-campo-izquierdo: #15301d;
+
+  /* NO se pone texto sobre el remate derecho, nunca: blanco sobre este verde da
+     3,88:1 y AA para texto normal exige 4,5:1. */
+  --banner-remate-derecho: #5e8f19;
+}

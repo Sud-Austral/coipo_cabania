@@ -1,0 +1,41 @@
+# Las etiquetas de los runners propios de la flota, para actionlint.
+#
+# POR QUÉ ESTE FICHERO SE SIEMBRA
+# ==============================
+# actionlint valida `runs-on:` contra la lista de etiquetas de los runners
+# ALOJADOS de GitHub. Cualquier etiqueta nuestra le resulta desconocida y falla
+# el job con exit 1. Su mensaje lo dice y es el que hay que creer:
+#
+#   label "conaf-ci" is unknown. available labels are "windows-latest", ...
+#   if it is a custom label for self-hosted runner, set list of labels in
+#   actionlint.yaml config file [runner-label]
+#
+# Hasta el 2026-09-29 la semilla no lo necesitaba, y el `actionlint.yaml` de la
+# fábrica lo decía con esas palabras: el ESQUELETO usaba `conaf-ci` sólo como
+# VALOR del input `runner:` del reusable de jueces, nunca como `runs-on:`
+# literal, y actionlint no valida valores de input. Ese día `ci.yml` pasó a
+# declarar `runs-on: conaf-ci` en sus dos jobs —porque en `ubuntu-latest` no
+# arrancaban por cuota agotada— y con eso la frase dejó de ser cierta.
+#
+# LO QUE ROMPE SI ESTE FICHERO FALTA
+# ==================================
+# Dos cosas, y la primera no está en la aplicación sembrada sino en la fábrica:
+# el paso «actionlint sobre los workflows ya sembrados» de
+# `.github/workflows/coherencia.yml` lintea el árbol que `sembrar.py` acaba de
+# escribir. Sin este fichero, ese paso se pone rojo y el CI de la fábrica queda
+# rojo con él. La segunda: cualquier aplicación que añada actionlint a su propio
+# CI lo necesitaría igual.
+#
+# SI LA APLICACIÓN ES PÚBLICA
+# ===========================
+# Entonces `ci.yml` tiene que volver a `ubuntu-latest` (el grupo de runners de la
+# organización no admite repositorios públicos, y para ellos los minutos
+# alojados son gratis), y este fichero sobra. Dejarlo no molesta.
+self-hosted-runner:
+  labels:
+    # vm3. Las compuertas de test: la suite de `ci.yml` y los jueces.
+    - conaf-ci
+    # vm3. Despliegues a UAT.
+    - conaf-uat
+    # vm2. Despliegues a producción.
+    - conaf-prod

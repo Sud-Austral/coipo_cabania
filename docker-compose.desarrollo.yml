@@ -1,0 +1,55 @@
+# Postgres para DESARROLLO LOCAL. No se despliega nunca.
+#
+# POR QUÉ ESTÁ APARTE DEL `docker-compose.yml`
+# ============================================
+# La regla R3 del sobre de despliegue prohíbe un motor de base de datos en el
+# compose de la aplicación, y con razón: el PostgreSQL de esta flota es
+# COMPARTIDO, vive fuera de Docker y lo administra otro equipo; una base dentro
+# del compose quedaría fuera de los respaldos y de la retención legal. Esa regla
+# habla del SERVIDOR.
+#
+# En la máquina de quien programa no hay ningún Postgres compartido, y hasta el
+# 2026-09-15 la semilla tampoco traía forma de conseguir uno: no había manera de
+# levantar la aplicación en local, ni de correr los tests marcados `requiere_db`.
+# Este archivo es esa forma, y se llama distinto a propósito para que ningún
+# juez, ningún `docker compose up` del servidor y ninguna persona lo confunda con
+# el sobre de despliegue.
+#
+# CÓMO SE USA
+# ===========
+#     docker compose -f docker-compose.desarrollo.yml up -d
+#     docker compose -f docker-compose.desarrollo.yml down          (conserva los datos)
+#     docker compose -f docker-compose.desarrollo.yml down -v       (los borra)
+#
+# El backend y el frontend NO van aquí: en desarrollo se corren a mano
+# (`uvicorn --reload`, `npm run dev`) porque un cambio tiene que verse sin
+# reconstruir una imagen. Ver la sección «Desarrollo local» de CLAUDE.md.
+
+services:
+
+  postgres:
+    # La MISMA mayor que produccion (PostgreSQL 17). Desarrollar contra otra
+    # mayor es descubrir las diferencias en el despliegue.
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-coipo}
+      # Credencial de juguete, sólo para esta base local, que no sale de la
+      # máquina. La de verdad vive en el `.env` del servidor y no pasa por git.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev}
+      POSTGRES_DB: ${POSTGRES_DB:-coipo_dev}
+    ports:
+      # Publicado en 127.0.0.1 y no en 0.0.0.0: una base de desarrollo que
+      # escucha en todas las interfaces queda expuesta a la red de la oficina.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-coipo}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    mem_limit: 512m
+    restart: unless-stopped
+    volumes:
+      - postgres_desarrollo:/var/lib/postgresql/data
+
+volumes:
+  postgres_desarrollo:

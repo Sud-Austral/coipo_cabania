@@ -1,0 +1,17 @@
+# Dependencias de ejecucion de ESTA aplicacion.
+#
+# La primera linea trae las de la flota, con sus techos `<N.0`, desde el archivo
+# CONGELADO. Debajo van las tuyas: pandas, openpyxl, geopandas, lo que la
+# aplicacion necesite. Con techo de mayor, por la misma razon que el base lo
+# lleva -- el despliegue reconstruye la imagen en cada push.
+#
+# POR QUE ESTE ARCHIVO EXISTE, y es una leccion cara: hasta el 2026-09-09 solo
+# habia un `requirements.txt` y estaba SELLADO en semilla.lock. La primera
+# dependencia de negocio de cualquier aplicacion obligaba a editar una pieza
+# congelada, y eso es un `SEM-1` de `j12` que solo se cierra suprimiendo el
+# juez. Medido entonces: 13 de las 14 aplicaciones de la flota con backend
+# declaran paquetes fuera de los del base. El falso positivo perfecto, que
+# ensena a apagar el gate -- exactamente lo que `sellar.py` ya documentaba para
+# `salud.py` y aqui se repetia.
+
+-r requirements-base.txt

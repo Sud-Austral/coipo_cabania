@@ -1,0 +1,33 @@
+# Esta aplicacion se sembro desde `semilla/` de coipo_master_produccion.
+#
+# NO LO BORRES. Es lo que declara que los archivos congelados de este repositorio
+# vienen de la semilla, y lo que le dice al gate que compare.
+#
+# LA CLAVE `adopta:` DICE QUE ESTANDARES RECLAMA ESTE REPOSITORIO, y cada juez
+# exige el suyo:
+#
+#     semilla    -> j12 compara las piezas congeladas contra semilla.lock
+#     interfaz   -> j13 comprueba foco, tema oscuro y movimiento reducido
+#
+# Se escribe ENTERA a proposito, aunque la clave ausente signifique "adopta
+# todo". Asi, quitarle una capa a un repositorio sembrado es un diff visible en
+# una linea que dice lo que hace, y no una ausencia que nadie nota.
+#
+# Un repositorio que NO se sembro puede declarar solo `adopta: interfaz`: adopta
+# el estandar visual sin que j12 juzgue archivos que son legitimamente suyos.
+# Reclamar MENOS de lo que corresponde se cuenta como supresion y sale con
+# ::warning:: -- es la unica via por la que un repositorio se apaga un juez a si
+# mismo, y esa puerta se paga.
+#
+# `lock_sha256` es la huella del CONGELADO con el que se sembro: dice QUE version
+# de las piezas selladas trae esta aplicacion, que la fecha sola no distingue.
+# Ningun juez la lee todavia; esta para que un humano pueda contrastarla.
+#
+# Y al reves: un repositorio que NO se sembro no debe declarar `semilla`. Su
+# `backend/Dockerfile` y su `frontend/nginx.conf` son suyos, aunque se llamen
+# igual.
+
+version: 2026-10-14
+gerencia: 5_DESARROLLO_PERSONAS
+lock_sha256: 50c5c566006f8fe1
+adopta: semilla, interfaz

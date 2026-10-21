@@ -1,62 +1,124 @@
-# Stack de producción de la MAQUETA: un único servicio.
+# El sobre de despliegue de esta aplicación.
 #
-# `app` es el build de React servido por nginx. No hay `backend` ni Postgres: hoy
-# todo el estado vive en el localStorage del navegador
-# (frontend/src/api/store.js) y no existe una sola llamada de red a un servidor
-# propio en frontend/src/. Es la primera app del ecosistema con un solo
-# contenedor; el patrón de dos servicios de INSUMO/DOCKER.md se retoma
-# tal cual en la fase 2, agregando `backend` y el depends_on con
-# condition: service_healthy.
+# El bloque `app` y las nueve reglas de raíz vienen de
+# `CONGELADO/docker-compose.fragmento.yml`, que explica el fallo real que cierra
+# cada una. Este archivo SÍ se edita: aquí la aplicación añade sus servicios
+# propios (un collector, un scheduler, lo que el negocio pida). Lo que no se
+# toca son las reglas.
 #
-# Por lo mismo, /health lo responde el propio nginx (frontend/nginx.conf) y no un
-# proxy hacia un backend que no existe.
+# Lo verifican `j01` (estructura), `j02` (APP_PORT), `j08` (lo que viaja) y
+# `j11` (que el healthcheck y el /health hablen de la misma ruta):
+#
+#     python jueces/correr.py --repo . --modo advisory --perfil aplicacion
+#
+# LAS REGLAS, EN CORTO. El porqué de cada una está en el fragmento congelado.
+#   R1  sin `version:`            R6  healthcheck + mem_limit + restart en todos
+#   R2  un solo `ports:`          R7  `interval: 5s` en los healthchecks
+#   R3  sin motor de base         R8  volúmenes con nombre; `./data/` sólo raíz
+#   R4  `context: .` en todo      R9  `env_file: .env` en todo lo que configure
+#   R5  `${VAR:?mensaje}` en cada variable obligatoria
+#   R10 `logging` json-file, max-size 20m y max-file 5, en todos
+#
+# R10 es de 2026-09-16 y todavía NO está en el fragmento congelado ni la
+# comprueba ningún juez (docs/QUE-FALTA.md, D2): hasta entonces se cumple aquí.
 
 services:
+
+  # El ÚNICO servicio que publica puerto. Sirve la SPA compilada y proxea al
+  # backend por la red interna de Docker.
+  #
+  # Se llama `app` y no `frontend` a propósito: es el nombre que el resto de la
+  # flota usa para «lo que publica APP_PORT», y el smoke test del despliegue lo
+  # busca por ese nombre.
   app:
     build:
-      # La RAÍZ del repo, no frontend/: es la convención del ecosistema, y deja
-      # que el Dockerfile copie desde cualquier ruta relativa a la raíz cuando la
-      # fase 2 traiga db/schema.sql.
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        # La app se sirve en la raíz del dominio
-        # (https://reserva-bienestar.conaf.cl/catalogo).
-        BASE_PATH: /
+        APP_VERSION: ${APP_VERSION:-0.0.0}
+        APP_COMMIT: ${APP_COMMIT:-desconocido}
+    # ÚNICO `ports:` del archivo (R2). Con guard y no con `${APP_PORT:-8080}`:
+    # un default silencioso aquí es exactamente como se produce una colisión de
+    # puertos entre dos aplicaciones de la misma VM, y entonces el smoke test de
+    # una da VERDE contra el /health de la otra.
     ports:
-      # APP_PORT sale del .env del servidor (ver .env.example): 8114, asignado en
-      # el registro app_master.xlsx. El 8000 de la derecha es fijo — es el
-      # `listen` de frontend/nginx.conf y no cambia por app.
-      - "${APP_PORT:-8114}:8000"
-    # Con un solo servicio no hay ningún depends_on que aproveche este estado,
-    # pero es la única evidencia desde dentro del servidor: `docker compose ps`
-    # dice healthy/unhealthy en vez de solo "Up". wget viene en BusyBox, en la
-    # imagen alpine de nginx; curl no.
+      - "${APP_PORT:?falta APP_PORT en el .env del servidor}:8000"
+    depends_on:
+      # A SECAS, jamás `condition: service_healthy`.
+      #
+      # Con la condición, si el backend no llega a sano el contenedor `app` se
+      # queda en estado "created" y `docker compose ps` NO LO MUESTRA: el smoke
+      # test recibe connection-refused desde un contenedor invisible, que es el
+      # peor mensaje de error posible. A secas, nginx siempre está arriba y el
+      # smoke test recibe un 502 diagnosticable, con `docker compose logs
+      # backend` al lado. Es la elección de `coipo_n8n`, hecha a sabiendas.
+      - backend
     healthcheck:
-      # `127.0.0.1` y NO `localhost`. Dentro de este contenedor /etc/hosts pone
-      # `::1 localhost` ANTES de la entrada IPv4, asi que `getent hosts localhost`
-      # devuelve ::1; el nginx de la imagen declara `listen 8000;` a secas, o sea
-      # solo IPv4; y el wget de BusyBox NO reintenta con IPv4 cuando el primero
-      # falla. Resultado: el chequeo daba "Connection refused" contra ::1 mientras
-      # la aplicacion respondia perfectamente. Medido dentro del contenedor en vm2
-      # el 2026-09-27: con 127.0.0.1 devuelve "ok", con localhost y con [::1] falla.
+      # Contra SU PROPIA raíz estática, no contra el /health del backend. Este
+      # healthcheck responde «nginx sirve», no «el sistema entero funciona»: si
+      # preguntara por el backend, una caída del backend marcaría `app` como
+      # unhealthy y se perdería la única pieza capaz de devolver un 502 con
+      # explicación.
       #
-      # El defecto estaba en quien PREGUNTA, no en quien responde: la alternativa
-      # era anadir `listen [::]:8000` al nginx de la imagen, y eso toca la
-      # aplicacion para arreglar un chequeo.
-      #
-      # NO generalizar: en la flota hay 16 healthchecks con `localhost` y QUINCE
-      # estan healthy. `localhost` no esta roto por si mismo; lo que rompe es la
-      # combinacion de las tres cosas de arriba.
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8000/health"]
-      interval: 30s
+      # Con `wget` de busybox, que `nginx:alpine` SÍ trae; `curl` NO está
+      # garantizado en las imágenes alpine.
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8000/"]
+      interval: 5s
       timeout: 3s
-      retries: 3
-      start_period: 5s
-    # R10: rotacion del log de Docker en todos los servicios (estandar de produccion, coipo_master_produccion, 2026-09-16)
+      retries: 12
+      start_period: 10s
+    mem_limit: 128m
+    # R10. Rotación del log de Docker, en TODOS los servicios. Sin esto el log de un
+    # contenedor crece sin techo: el 2026-09-16 `coipo_moodle-cron-1` llevaba 4,4 GB
+    # en 16 días, y leerlo por la API de Docker le costaba más de un núcleo a dockerd
+    # en vm2 (referencia/00-HALLAZGOS-Y-ESTADO-REAL.md, H12). Va aquí y no en el
+    # daemon: vm2 tiene estos valores en daemon.json, pero dockerd no se reinició
+    # después y no están activos. En bloque, nunca como mapa en línea `{}`.
     logging:
       driver: json-file
       options:
         max-size: "20m"
         max-file: "5"
     restart: unless-stopped
+
+  # Sin `ports:`. Habla por la red interna de Docker; sólo `app` publica.
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-0.0.0}
+        APP_COMMIT: ${APP_COMMIT:-desconocido}
+        APP_CONSTRUIDO_EN: ${APP_CONSTRUIDO_EN:-desconocido}
+    env_file: .env
+    healthcheck:
+      # Contra el /health REAL, y por la misma ruta que el router declara. El
+      # test de contrato `test_health.py` compara estas dos cosas: añadir el
+      # prefijo /api/v1 al router sin tocar esta línea deja el contenedor
+      # unhealthy para siempre.
+      # En UNA sola linea a proposito. Partirla es YAML valido y ningun compose
+      # de la flota lo hace: el verificador usa un parser minimo que se NIEGA a
+      # adivinar y declara el archivo no evaluado -- peor que un hallazgo,
+      # porque nadie mira lo que no se evaluo.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
+    # MEDIR ANTES DE CAMBIAR ESTE NÚMERO. Un `mem_limit` puesto sin medir la RAM
+    # real de la VM produce un OOM kill silencioso en producción, que es peor que
+    # no tener límite. Este valor es un punto de partida para un uvicorn con
+    # SQLAlchemy: revísalo con `docker stats` sobre carga real.
+    mem_limit: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    restart: unless-stopped
+
+# NINGÚN motor de base de datos aquí (R3). El PostgreSQL 17.10 de esta flota es
+# COMPARTIDO, vive fuera de Docker en otra máquina y lo administra otro equipo:
+# una base propia en el compose queda fuera de los respaldos, de la retención
+# legal y del ledger de migraciones. Se conecta con las cinco variables
+# DATABASE_* del `.env`, nunca con una DATABASE_URL única.

@@ -1,0 +1,250 @@
+/* Banner institucional CONAF — la cabecera de la aplicacion.
+   ==========================================================
+
+   PROPORCION NATURAL, CON PISO DE ALTURA. Sin recorte vertical, sin deformacion y sin
+   `object-fit`: la composicion entera -filete bicolor, marca y remate organico del borde
+   derecho- se ve completa en cualquier ancho.
+
+   Los numeros de GEOMETRIA no estan aqui: viven en estilos/tokens.css, dentro del bloque que
+   genera semilla/sembrar.py (src/marca.json). Esta hoja solo declara COMO se usan. Lo que si
+   esta aqui son decisiones de maqueta (el aire, los tamanos de letra) y lo dicen. Si alguien
+   teclea una medida, verify-banner.mjs -que compara lo PINTADO contra marca.json- sale rojo.
+
+   Hay DOS reglas medulares, y las dos dependen de la misma cuenta -el ancho al que se PINTA la
+   imagen-, asi que comparten la variable `--ancho-imagen`:
+
+       la imagen:  width: var(--ancho-imagen);
+       el texto:   inset-inline-start: calc(... * var(--ancho-imagen));  (mas abajo)
+
+   Todo lo demas de este archivo existe para que esas dos lineas funcionen. */
+
+/* --- Tokens que esta hoja NECESITA, registrados para que, si faltan, fallen CERRADOS -------
+
+   Sin registro, un token ausente (un tokens.css de antes de esta hoja) o escrito con unidad
+   (`875px`, `875,5`) invalida el `calc()` de `.banner-titulo`: el navegador cae a `auto` y el
+   texto se ancla por el otro lado, o sea SOBRE LA MARCA, que es justo el defecto que esta hoja
+   corrige. Con `@property` y `syntax: "<number>"` el valor malo se descarta y vale el
+   `initial-value`, elegido para que el texto quede FUERA de la pantalla: un titulo que no se ve
+   se nota; uno encima de la marca se cuela. Firefox anterior a la 128 no entiende `@property`:
+   ahi lo cubre scripts/verificar-titulo.mjs, que mide los tokens que el navegador calcula. */
+@property --ancho-asset {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 3032;
+}
+
+@property --titulo-desde {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 100000;
+}
+
+@property --titulo-hasta {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+.banner-institucional {
+  /* Se ve mientras la imagen decodifica, si la imagen falla, y rellena el borde derecho
+     cuando el asset corto no cubre el ancho del viewport. Es el verde del campo
+     principal del propio asset, asi que la union es invisible. */
+  background: var(--banner-campo-principal);
+
+  /* El que recorta. La imagen desborda por la DERECHA por debajo del ancho de cruce y
+     este `overflow` se la come. Sin el, aparece una barra de scroll horizontal en toda
+     la pagina. */
+  overflow: hidden;
+
+  /* Sin esto, el <img> como elemento en linea arrastra el espacio de la linea base y
+     deja una franja clara de 3-4 px bajo el banner que parece un borde y no lo es. */
+  line-height: 0;
+
+  position: relative;
+
+  /* NO es `sticky` a proposito. Si la barra de navegacion ya es fija, dos elementos
+     fijos se comen ~160 px permanentes de una herramienta que se escanea de un vistazo.
+     "No dejes el banner y la navegacion fijos a la vez" es una prohibicion escrita del
+     insumo grafico. */
+
+  /* Duplicado consciente: 560 es tambien `umbralAssetCorto` en src/marca.json. Una media
+     query no puede leer una custom property, asi que el numero tiene que estar aqui como
+     literal. Este token existe para que el componente pueda comprobar en DESARROLLO que
+     los dos coinciden, y para que quien lea el archivo sepa que hay un gemelo. */
+  --umbral-asset-corto: 560;
+
+  /* EL ANCHO AL QUE SE PINTA LA IMAGEN. Por encima del ancho de cruce (alto-minimo * razon,
+     1164,83 px) es el 100 % del contenedor; por debajo, la imagen deja de encoger y mide
+     1164,83 px aunque el contenedor sea mas estrecho, y el `overflow: hidden` de arriba se
+     come lo que sobra por la derecha.
+
+     LA MARCA Y EL TEXTO SE COLOCAN CON ESTE NUMERO, no con el ancho del contenedor: hasta
+     el 2026-10-05 el texto seguia al contenedor (24,57 % de el) mientras la imagen
+     seguia congelada, y bajo ~1165 px el texto caia sobre la marca (156 px a 600 px de
+     ancho). El `100%` se resuelve donde se USA: tanto la imagen como el texto superpuesto
+     tienen como bloque contenedor a este elemento, asi que dan el mismo ancho. */
+  --ancho-imagen: max(100%, calc(var(--alto-minimo) * var(--razon-banner)));
+}
+
+.banner-enlace {
+  display: block;
+}
+
+.banner-institucional .banner-imagen {
+  display: block;
+
+  /* LA REGLA MEDULAR DE LA IMAGEN.
+     ----------------------------
+     Por encima del ancho de cruce manda el `100%`: la imagen ocupa el ancho disponible y
+     su alto sale de la proporcion natural. Por debajo del cruce manda el segundo termino:
+     la imagen deja de encoger, desborda por la derecha, y el `overflow: hidden` del
+     contenedor la recorta (ver `--ancho-imagen` arriba).
+
+     JAMAS `object-fit`. Con `object-fit: cover` y un asset de 17,13:1 el navegador
+     recorta por ARRIBA Y ABAJO para llenar la caja, y lo primero que amputa es el filete
+     bicolor del borde superior — que es un elemento de identidad institucional. Aqui el
+     recorte es puramente horizontal, asi que ningun filete se puede perder en ningun
+     ancho. Esa es toda la razon de ser de esta maqueta.
+
+     El recorte por la derecha cae dentro del tramo uniforme del campo plano en todo
+     ancho realista, asi que no deja costura ni franja bitono. El peor caso -donde el
+     corte entra mas adentro del remate decorativo- esta en la banda inmediatamente
+     inferior al cruce, y verify-banner.mjs captura ese ancho exacto para que se MIRE. */
+  width: var(--ancho-imagen);
+  height: auto;
+}
+
+/* --- Texto superpuesto: SIN CAJA ---------------------------------------------------------
+
+   Es OPCIONAL: una aplicacion sembrada no pasa ninguno por defecto, porque el JPEG ya
+   imprime el nombre de la unidad. Cuando lo hay, va sobre el CAMPO PLANO #064928, entre
+   `--titulo-desde` (donde empieza el campo plano, a la derecha de la marca de cualquiera de
+   las siete gerencias) y `--titulo-hasta` (el remate decorativo menos un aire). Ambos son
+   px del asset, y se reescalan con el ancho al que se pinta la imagen.
+
+   NO LLEVA FONDO. Hasta el 2026-10-05 llevaba uno solido (la clase `.banner-titulo-franja`):
+   encima de la imagen se veia como un recuadro, porque el campo NO es de un solo verde a la
+   izquierda (hay una cuña oscura #15301d) ni a la derecha (el remate), y tapaba la marca de
+   cuatro de las siete gerencias. Sin fondo, lo unico que cambia en la imagen son los pixeles
+   del texto: medido, 62 px contra 5.758.
+
+   Blanco sobre el campo principal da 10,55:1 (nombre) y 9,15:1 (la linea de meta, que va con
+   opacity .92), muy por encima del 4,5:1 que exige WCAG 1.4.3. Sobre el remate daria 3,88:1
+   -3,30:1 contra su color dominante-, que NO alcanza: por eso el texto se recorta con elipsis
+   antes de invadirlo, en vez de desbordar sobre el.
+
+   `pointer-events: none` para que no le robe el clic al enlace que envuelve el banner:
+   visualmente esta encima, pero el clic lo atraviesa. */
+.banner-titulo {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(var(--titulo-desde) / var(--ancho-asset) * var(--ancho-imagen));
+  /* `max(1rem, ...)`: cuando la imagen es mas ancha que el contenedor (bajo el cruce) el
+     remate queda fuera de la vista y la resta es negativa; entonces vale el aire de 1rem
+     contra el borde del viewport. */
+  inset-inline-end: max(1rem, calc(100% - var(--titulo-hasta) / var(--ancho-asset) * var(--ancho-imagen)));
+  /* DECISION DE MAQUETA: el aire entre el inicio del campo plano y el texto. */
+  padding-inline-start: clamp(12px, 1.6vw, 28px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  line-height: 1.25;
+  color: #fff;
+  pointer-events: none;
+}
+
+.banner-titulo-nombre {
+  margin: 0;
+  font-size: clamp(0.95rem, 1.35vw, 1.45rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.banner-titulo-meta {
+  margin: 0;
+  font-size: clamp(0.7rem, 0.85vw, 0.85rem);
+  font-weight: 400;
+  opacity: 0.92;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Colores forzados (modo de alto contraste de Windows) ----------------------------------
+
+   Con `forced-colors: active` el navegador fuerza el color del TEXTO a la paleta de la persona
+   (CanvasText) y le pinta DETRAS una placa del color de Canvas, pegada a cada linea: se lee
+   (negro sobre blanco), pero es una caja encima del banner, justo lo que esta hoja quita.
+   Medido el 2026-10-06 en Chromium con `forcedColors: 'active'`; una version anterior de este
+   comentario decia "negro sobre el verde, 1,99:1", una deduccion que ninguna captura confirmo.
+   El JPEG no cambia en este modo, asi que el blanco sigue leyendose sobre el verde (9,15:1,
+   medido sobre los pixeles): se le dice al navegador que no toque este texto.
+
+   EL PRECIO: este texto no adopta la paleta que la persona eligio. Es una decision de maqueta,
+   no una medida. Si se prefiere respetarla, se borra este bloque y se quita de
+   scripts/verificar-titulo.mjs la pasada de colores forzados, que sin el bloque ve la placa
+   (codigo W). */
+@media (forced-colors: active) {
+  .banner-titulo {
+    forced-color-adjust: none;
+  }
+}
+
+/* --- Movil: asset corto y titulo en su propia franja ---------------------------------------
+
+   559.98 y no 560: el `<picture>` del arnes de verificacion usa `(max-width: 559.98px)` para
+   que no haya un ancho -exactamente 560- en el que las dos reglas apliquen o no aplique
+   ninguna por redondeo de pixel fraccionario.
+
+   El asset corto muestra la marca COMPLETA, algo que con el largo a este ancho no ocurre. Se
+   ancla a la izquierda con altura fija y el contenedor pinta el resto del verde; como el
+   asset TERMINA en ese mismo verde, la union es invisible.
+
+   El titulo NO CABE superpuesto aqui, y no es una opinion: a 390 px el asset largo muestra
+   las columnas 0-1015 de 3032, y la marca llega a 819 en FISCALIZACION y el campo plano empieza
+   en 875: quedan ~54 px de campo plano (cuenta: (1015 - 875) * 1164,83 / 3032; una version
+   anterior decia ~63). Baja a su propia franja, DEBAJO de la imagen, que SI lleva fondo -el verde del
+   campo principal, exacto: UI-2- porque ya no tapa nada. Entre el borde inferior de la
+   imagen (en su mayor parte #15301d) y la franja (#064928) queda un escalon de color: es del
+   asset, que termina en otro verde por abajo, no de esta hoja. */
+@media (max-width: 559.98px) {
+  .banner-institucional .banner-imagen {
+    /* `width: auto` + `height` fija: aqui manda el alto, no el ancho. La regla medular
+       de arriba no sirve porque el asset corto tiene OTRA razon (4,94:1 frente a
+       17,13:1) y aplicarle el ancho de cruce del largo lo estiraria a 235 px de alto. */
+    width: auto;
+    height: var(--alto-minimo);
+  }
+
+  .banner-titulo {
+    position: static;
+    padding: 10px 16px 12px;
+    gap: 1px;
+    background: var(--banner-campo-principal);
+    inset: auto;
+  }
+
+  .banner-titulo-nombre {
+    font-size: 1rem;
+    white-space: normal;
+  }
+
+  .banner-titulo-meta {
+    font-size: 0.72rem;
+    white-space: normal;
+  }
+}
+
+/* Blanco y no el color de acento: el remate #5e8f19 sobre el campo #064928 da 2,72:1,
+   por debajo del 3:1 que exige WCAG 1.4.11 para elementos de interfaz. Y como el offset
+   es negativo el anillo se dibuja DENTRO de la imagen, donde en tramos cruza pixeles que
+   son exactamente ese mismo verde: contraste 1:1, anillo invisible. El blanco da 10,55:1
+   sobre el campo principal y 14,27:1 sobre el campo bajo la marca. */
+.banner-enlace:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: -3px;
+}

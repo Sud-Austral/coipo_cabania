@@ -1,0 +1,87 @@
+/* Navegación — los ocho estados (UI-9), sobre `.navegacion-enlace`:
+     1 reposo          `.navegacion-enlace`
+     2 hover           `.navegacion-enlace:hover`
+     3 focus-visible   heredado de `interfaz.css`, hacia adentro (la barra recorta)
+     4 activo          `.navegacion-enlace:active`
+     5 deshabilitado   no aplica: una sección sin permiso no se muestra
+     6 cargando        no aplica: las secciones son fijas, no vienen de la API
+     7 vacío           no aplica: con una sola sección no se pinta la barra
+     8 error           no aplica
+   La sección actual (`aria-current`) no es un estado de interacción: es el dato
+   de dónde está la persona.
+
+   NO es fija: el banner tampoco lo es (BannerInstitucional.jsx, prohibición 3), y
+   una barra fija sin banner encima tapa el foco al tabular (WCAG 2.4.11). En pantallas
+   angostas se desplaza de lado en vez de esconderse en un menú hamburguesa: con
+   pocas secciones, verlas todas vale más que ahorrar una línea. */
+.navegacion {
+  border-block-end: 1px solid var(--borde-sutil);
+  background: var(--superficie);
+}
+
+.navegacion-lista {
+  position: relative;
+  display: flex;
+  gap: var(--e-1);
+  max-inline-size: var(--ancho-contenido);
+  margin: 0 auto;
+  padding: 0 var(--e-3);
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.navegacion-enlace {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-block-size: calc(var(--tactil-minimo) + var(--e-1));
+  padding: 0 var(--e-3);
+  color: var(--texto-tenue);
+  font-size: var(--f-s);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--t-micro) ease;
+}
+
+.navegacion-enlace:hover {
+  color: var(--texto);
+}
+
+.navegacion-enlace:active {
+  color: var(--texto);
+}
+
+.navegacion-enlace:focus-visible {
+  outline-offset: calc(var(--foco-ancho) * -1);
+  border-radius: var(--r-s);
+}
+
+/* Color y peso: la señal que no depende del indicador ni de JavaScript. */
+.navegacion-enlace[aria-current='page'] {
+  color: var(--verde-institucional);
+  font-weight: 650;
+}
+
+/* Un solo indicador para toda la barra, recortado a la sección actual. */
+.navegacion-indicador {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-end: 0;
+  block-size: 3px;
+  background: var(--verde-institucional);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Sólo después de la primera medición: la página no debe arrancar con el
+   indicador barriendo desde la izquierda. Curva ease-in-out porque el elemento
+   ya está en pantalla y se mueve; 260 ms, bajo el techo de 300 de la interfaz. */
+.navegacion-lista[data-listo] .navegacion-indicador {
+  transition: clip-path 260ms cubic-bezier(.77, 0, .175, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navegacion-lista[data-listo] .navegacion-indicador { transition: none; }
+}

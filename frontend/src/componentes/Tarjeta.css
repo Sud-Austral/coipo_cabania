@@ -1,0 +1,167 @@
+/* Tarjeta — los ocho estados (UI-9):
+     1 reposo          `.tarjeta`
+     2 hover           `.tarjeta-enlace:hover` (sólo si es enlace; una tarjeta inerte no
+                       reacciona: reaccionar promete un clic que no existe)
+     3 focus-visible   el anillo de `interfaz.css` sobre el <a>, extendido a la tarjeta
+                       con `:focus-within`
+     4 activo          `.tarjeta-enlace:active` — se hunde, como un botón
+     5 deshabilitado   no aplica: una tarjeta que no se puede abrir no es enlace
+     6 cargando        no aplica aquí: el esqueleto de carga es de la vista
+     7 vacío           no aplica: sin datos no se pinta la tarjeta, se pinta `Estado`
+     8 error           no aplica: el error de la carga lo dice `Estado`
+   Una tarjeta es un contenedor para una cosa que se abre o se compara, no la
+   estructura de la página: no se anidan, y una vista no se arma sólo con ellas.
+   Sin animación de entrada: una lista de trabajo se abre decenas de veces al día y
+   una cascada cada vez la haría sentir lenta. */
+.tarjeta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e-3);
+  padding: var(--e-5);
+  border: 1px solid var(--borde-sutil);
+  border-radius: var(--r-l);
+  background: var(--superficie);
+  box-shadow:
+    0 1px 1px rgba(6, 73, 40, .04),
+    0 2px 8px rgba(6, 73, 40, .04);
+  transition:
+    box-shadow 240ms cubic-bezier(.23, 1, .32, 1),
+    border-color var(--t-micro) ease,
+    transform 160ms cubic-bezier(.23, 1, .32, 1);
+}
+
+.tarjeta-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--e-2) var(--e-3);
+}
+
+/* El título se queda con el ancho; si no caben los dos, el estado baja a su propia
+   línea en vez de partir el nombre del predio en dos. */
+.tarjeta-titulos {
+  flex: 1 1 12rem;
+}
+
+.tarjeta-titulos {
+  display: grid;
+  gap: .125rem;
+  min-inline-size: 0;
+}
+
+.tarjeta-titulo {
+  margin: 0;
+  font-size: var(--f-l);
+  font-weight: 650;
+}
+
+.tarjeta-titulo a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.tarjeta-enlace .tarjeta-titulo a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.tarjeta-etiqueta {
+  margin: 0;
+  font-size: var(--f-s);
+  color: var(--texto-tenue);
+}
+
+.tarjeta-estado {
+  flex: none;
+}
+
+.tarjeta-cuerpo {
+  color: var(--texto-tenue);
+  font-size: var(--f-s);
+  line-height: var(--i-cuerpo);
+}
+
+.tarjeta-cuerpo > :first-child { margin-block-start: 0; }
+.tarjeta-cuerpo > :last-child { margin-block-end: 0; }
+
+.tarjeta-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+  margin-block-start: auto;
+  padding-block-start: var(--e-3);
+  border-block-start: 1px solid var(--borde-sutil);
+}
+
+.tarjeta-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--e-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--texto-tenue);
+  font-size: var(--f-s);
+  font-variant-numeric: tabular-nums;
+}
+
+.tarjeta-meta li + li::before {
+  content: "·";
+  margin-inline-end: var(--e-2);
+  color: var(--borde-control);
+}
+
+.tarjeta-flecha {
+  flex: none;
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  margin-inline-start: auto;
+  fill: none;
+  stroke: var(--texto-tenue);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 240ms cubic-bezier(.23, 1, .32, 1), stroke var(--t-micro) ease;
+}
+
+.tarjeta-acciones {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-2);
+  margin-block-start: auto;
+  padding-block-start: var(--e-2);
+}
+
+.tarjeta-enlace:focus-within {
+  border-color: var(--foco-color);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tarjeta-enlace:hover {
+    border-color: color-mix(in srgb, var(--verde-institucional) 28%, var(--borde-sutil));
+    box-shadow:
+      0 1px 1px rgba(6, 73, 40, .04),
+      0 14px 32px -10px rgba(6, 73, 40, .18);
+  }
+  .tarjeta-enlace:hover .tarjeta-flecha {
+    stroke: var(--verde-institucional);
+    transform: translateX(3px);
+  }
+}
+
+.tarjeta-enlace:active {
+  transform: scale(.985);
+  box-shadow: 0 1px 1px rgba(6, 73, 40, .06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tarjeta, .tarjeta-flecha { transition: none; }
+  .tarjeta-enlace:active { transform: none; }
+}

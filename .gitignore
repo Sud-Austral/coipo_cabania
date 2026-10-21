@@ -21,7 +21,7 @@ dist-ssr
 
 # Datos persistentes de volúmenes. Hoy no hay ninguno; el pipeline ya excluye
 # data/ del rsync, así que queda declarado por si la fase 2 los trae.
-data/
+/data/
 
 # Herramientas locales, ajenas al proyecto (CLI de Claude Code instalado en la raíz)
 /package.json
@@ -39,3 +39,30 @@ data/
 *.njsproj
 *.sln
 *.sw?
+
+# --- anadido por semilla/sembrar.py ---
+/.env
+/.env.local
+/.env.*.local
+!/frontend/.env.development
+!/frontend/.env.production
+/data/
+*.sql.gz
+*.dump
+respaldos/
+node_modules/
+dist/
+coverage/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+verificacion/
+*.png.tmp
+.claude/rules/errores-*.md
+.qodo/
+.vscode/
+.idea/
+Thumbs.db
+/alta-iam*

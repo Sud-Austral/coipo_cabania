@@ -1,0 +1,69 @@
+/* Estado — la referencia de UI-13 y UI-14.
+   =======================================
+
+   POR QUÉ EXISTE, con el número. En la aplicación más avanzada de la flota el
+   sentimiento se modela como paleta categórica siendo una paleta de ESTADO, y
+   se codifica **sólo por color**. Medido: de las ocho combinaciones de categoría
+   × tema, **dos pasan AA**. Los bordes del chip van de 1,14:1 a 1,90:1 contra
+   la tarjeta — ninguno alcanza el 3:1 de 1.4.11, así que el borde no es
+   perceptible en ninguna de las ocho. Y la categoría neutra, que es el estado
+   por DEFECTO, falla en los dos temas.
+
+   Rojo-ámbar-verde es el peor caso posible para el daltonismo rojo-verde, que
+   afecta a alrededor del 8 % de los hombres.
+
+   LA REGLA, y el orden importa: **forma o icono, más etiqueta, más color.**
+   Si el color se pierde —daltonismo, impresión en blanco y negro, pantalla mal
+   calibrada, modo de alto contraste— la información sigue estando. El color es
+   el refuerzo, nunca el portador.
+
+   Aquí eso se implementa con tres cosas a la vez y ninguna es opcional:
+     · un glifo distinto por estado, que no depende del tono;
+     · la etiqueta en texto, siempre visible, nunca sólo en `title`;
+     · el color, que refuerza. */
+
+.estado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-2);
+
+  padding: var(--e-1) var(--e-3);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--estado-tono);
+
+  /* El texto va en el tono pleno sobre una mezcla muy diluida del mismo tono.
+     Los tres tonos se eligieron midiendo: ver `interfaz.css`. */
+  background: color-mix(in srgb, var(--estado-tono) 12%, var(--superficie));
+  color: var(--estado-tono);
+
+  font-size: var(--f-s);
+  font-weight: 600;
+  line-height: var(--i-denso);
+
+  /* NO se baja de 14px. Un chip de estado a 12px queda por debajo del umbral de
+     «texto grande» y entonces le aplica 4,5:1 sin excepción — que es lo que en
+     producción hoy no se cumple. */
+}
+
+/* El glifo. `aria-hidden` porque la etiqueta de al lado ya lo dice: sin esto el
+   lector de pantalla leería el símbolo y después la palabra. */
+.estado-glifo {
+  /* Ancho fijo para que los chips de una lista alineen su etiqueta. */
+  flex: none;
+  inline-size: 1em;
+  block-size: 1em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.estado.correcto { --estado-tono: var(--verde-institucional); }
+.estado.error    { --estado-tono: var(--error); }
+.estado.aviso    { --estado-tono: var(--aviso); }
+.estado.info     { --estado-tono: var(--info); }
+
+/* El borde con el tono pleno da 3:1 o más contra la superficie en los dos temas
+   —los cuatro tonos se verificaron—, así que el chip se identifica como
+   componente aunque el relleno se pierda. WCAG 1.4.11. */
