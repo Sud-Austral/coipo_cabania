@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { LogOut } from 'lucide-react'
-import banner from '../assets/banner-conaf-uia.jpg'
+import { Banner } from './Banner.jsx'
 import { reiniciarDemo } from '../datos/servicio.js'
 import { CALIDADES } from '../lib/reglas.js'
 import { INICIO, useSesion } from './Perfil.jsx'
@@ -36,16 +36,14 @@ export function Plantilla() {
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="no-imprimir border-b border-borde bg-white">
-        <div className="h-10 overflow-hidden bg-banner sm:h-12">
-          <img src={banner} alt="CONAF · Unidad de Información y Análisis" className="h-full w-auto max-w-none object-cover object-left" width={3032} height={177} />
-        </div>
+        <Banner />
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-          <NavLink to={INICIO[usuario.perfil]} className="mr-auto leading-tight">
+          <NavLink to={INICIO[usuario.perfil]} className="mr-auto leading-tight lg:sr-only">
             <span className="block text-[17px] font-bold text-verde-800">Casas de Veraneo</span>
             <span className="block text-[13px] text-tinta-500">Servicio de Bienestar · CONAF</span>
           </NavLink>
 
-          <nav aria-label="Principal" className="order-3 -mx-1 flex w-full gap-1 overflow-x-auto px-1 sm:order-none sm:mx-0 sm:w-auto sm:px-0">
+          <nav aria-label="Principal" className="order-3 -mx-1 flex w-full gap-1 overflow-x-auto px-1 sm:order-none sm:mx-0 sm:w-auto sm:px-0 lg:ml-auto">
             {NAV[usuario.perfil].map((n) => (
               <NavLink
                 key={n.a}

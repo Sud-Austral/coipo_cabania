@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Building2, ShieldCheck, UserRoundCheck } from 'lucide-react'
-import banner from '../assets/banner-conaf-uia.jpg'
+import { Banner } from '../componentes/Banner.jsx'
 import { REGIONES } from '../datos/casas.js'
 import { ACCESOS_DEMO, EXTERNO_DEMO, buscarEnNomina, nombreCoincide, porId } from '../datos/usuarios.js'
 import { formatearRut, rutValido } from '../lib/formato.js'
@@ -121,9 +121,7 @@ export function Ingreso() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-fondo">
-      <div className="h-10 overflow-hidden bg-banner sm:h-12">
-        <img src={banner} alt="CONAF · Unidad de Información y Análisis" className="h-full w-auto max-w-none object-cover object-left" width={3032} height={177} />
-      </div>
+      <Banner />
 
       <main className="mx-auto w-full max-w-md flex-1 px-4 py-8 sm:py-12">
         <p className="text-[13px] font-semibold uppercase tracking-wide text-verde-700">Servicio de Bienestar · CONAF</p>
