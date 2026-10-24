@@ -7,6 +7,30 @@ técnicas están en `INSUMO/` (el PDF de la solicitud es la fuente de requisitos
 FastAPI + PostgreSQL se construye en una fase posterior; los fixtures del mock deben imitar
 la forma de las futuras respuestas de la API.
 
+## Guía para agentes (VERIFICADO con el código; no ejecuté los comandos)
+
+**Estado:** solo frontend, sin backend ni base de datos; el estado de la demo vive en `localStorage` (`frontend/src/api/store.js`)
+y los datos son ficticios. Publicada con un único contenedor nginx en `reserva-bienestar.conaf.cl` (puerto 8114) en cada push a `main`
+(`.github/workflows/deploy-prod.yml`, workflow reusable de `infra-docker-base`: **no se edita por app**).
+
+**Estructura:** `frontend/src/{pages,components,api,fixtures,context,lib}`; `frontend/qa/` (Puppeteer manual); `docs/ALCANCE.md`
+(alcance), `docs/GUIA_INDUCCION.md` (inducción, incluye la funcionalidad de valoraciones con estrellas); `INSUMO/` (requisitos y guías).
+
+**Comandos** (siempre dentro de `frontend/`; el `package.json` de la raíz no es del proyecto): `npm ci`, `npm run dev`, `npm run lint`
+(oxlint), `npm run build`, `npm run preview -- --port 5199 --strictPort` y luego `node qa/todos-los-perfiles.mjs` (también
+`flujo-afiliado`, `revision-movil`, `banner-institucional`). No hay pruebas unitarias ni CI de QA.
+
+**Convenciones:** los fixtures deben imitar la forma de las futuras respuestas de la API (fase 2). Textos de interfaz y documentos en español.
+
+**Trampas conocidas:**
+- El `healthcheck` del compose usa `127.0.0.1` y no `localhost` a propósito (el wget de BusyBox no reintenta por IPv4; ver el comentario en `docker-compose.yml`).
+- `/health` lo responde el propio nginx; el pipeline lo consulta una sola vez, 5 s después de levantar.
+- El `.env` real vive solo en `/opt/apps/coipo_cabania/`; con finales de línea Unix. Si falta, el deploy falla en su primer paso.
+- La franja de «maqueta sin valor operativo» (`AvisoDemostracion.jsx`) y el banner institucional no se quitan sin decisión de Bienestar/UIA.
+- Pages gratuito ya no se usa: el repo debe seguir **privado**.
+
+**No tocar sin confirmar:** `deploy-prod.yml`, `deploy/*.conf`, `INSUMO/` e `INSUMO_PRODUCCION/` (copias de guías de la flota).
+
 Los **archivos e insumos** que Bienestar debe enviar antes de la reunión (tarifas,
 listado de inmuebles, fotos, nóminas, formatos de Remuneraciones, etc.) se piden por
 correo con `docs/INSUMOS_BIENESTAR.md` — no repetirlos como preguntas de reunión.

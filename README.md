@@ -14,6 +14,22 @@ El alcance y las decisiones de esta fase están en [docs/ALCANCE.md](docs/ALCANC
 requisitos originales, en [INSUMO/](INSUMO/); la guía para incorporarse al proyecto, en
 [docs/GUIA_INDUCCION.md](docs/GUIA_INDUCCION.md).
 
+## Estructura (VERIFICADO con `git ls-files`)
+
+| Ruta | Contenido |
+|---|---|
+| `frontend/src/` | `pages/` (vistas por perfil: `publico`, `regional`, `central`, `admin`), `components/`, `api/` (`store.js` sobre `localStorage`, `reservas.js`, `valoraciones.js`, `gestion.js`), `fixtures/` (datos ficticios), `context/RolContext.jsx` |
+| `frontend/qa/` | scripts de Puppeteer, a mano |
+| `docker-compose.yml`, `frontend/Dockerfile`, `frontend/nginx.conf` | un solo servicio `app` (nginx con el build de React, puerto interno 8000, `/health` propio) |
+| `deploy/`, `.github/workflows/deploy-prod.yml` | vhost de referencia y despliegue al servidor |
+| `docs/`, `INSUMO/`, `INSUMO_PRODUCCION/`, `insumos/` | alcance, inducción y guion de demo; requisitos y guías; problema y solución |
+| `VERSION_2026.08.25.*.md` | notas de las versiones presentadas a Negocio |
+
+Variables de entorno (solo nombres, ver `.env.example`): `APP_NAME`, `APP_PORT` (8114). Las `MINIO_*` están comentadas porque la
+app aún no usa el almacén de archivos.
+
+Documentación: [CLAUDE.md](CLAUDE.md) · [insumos/00-PROBLEMA.md](insumos/00-PROBLEMA.md) · [insumos/01-SOLUCION.md](insumos/01-SOLUCION.md)
+
 ## Dónde está publicada
 
 **https://reserva-bienestar.conaf.cl** — servidor CONAF, red interna, puerto 8114. La despliega
