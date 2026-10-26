@@ -39,3 +39,8 @@ data/
 *.njsproj
 *.sln
 *.sw?
+
+# .env de los servidores, traidos a mano
+.env.vm2
+.env.vm3
+.env_legacy
