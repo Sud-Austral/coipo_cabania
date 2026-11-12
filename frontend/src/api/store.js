@@ -32,12 +32,6 @@ function semillas() {
     auditoria: auditoriaSeed,
     carga_nomina: ultimaCargaNomina,
     valoraciones: valoracionesSeed,
-<<<<<<< Updated upstream
-=======
-    usuarios: usuariosSeed,
-    tarifas_config: tarifasSeed,
-    cobros: [],
-    cargas_nomina: [],
     datos_transferencia: {
       banco: 'Banco por definir',
       tipo_cuenta: 'Cuenta corriente',
@@ -47,7 +41,6 @@ function semillas() {
       correo: 'Por definir',
       nota: 'Datos demostrativos. Reemplazar por los datos bancarios oficiales antes de uso operativo.',
     },
->>>>>>> Stashed changes
   }
 }
 

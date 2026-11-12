@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft,
   BedDouble,
@@ -128,12 +128,9 @@ function Valoraciones({ inmuebleId }) {
 export function FichaInmueble() {
   const { id } = useParams()
   const navegar = useNavigate()
-<<<<<<< Updated upstream
-=======
   const [parametros] = useSearchParams()
   const entradaInicial = parametros.get('entrada')
   const salidaInicial = parametros.get('salida')
->>>>>>> Stashed changes
   const { esNoAfiliado, esPortal } = useRol()
   const [inmueble, setInmueble] = useState(null)
   const [cargando, setCargando] = useState(true)
@@ -361,12 +358,8 @@ export function FichaInmueble() {
             {esPortal && (
               <Boton
                 className="mt-4 w-full"
-<<<<<<< Updated upstream
-                onClick={() => navegar(`/inmuebles/${inmueble.id}/reservar`)}
-=======
                 disabled={!fechaEntrada || !fechaSalida || validandoDisponibilidad || !disponibilidad?.libre}
                 onClick={() => navegar(`/inmuebles/${inmueble.id}/reservar${queryFechas}`)}
->>>>>>> Stashed changes
               >
                 Solicitar reserva
               </Boton>

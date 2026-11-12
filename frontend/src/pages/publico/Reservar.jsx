@@ -192,13 +192,8 @@ export function Reservar() {
   const acompanantesIncompletos = acompanantes.some((a) => !a.nombre.trim() || !a.rut.trim())
 
   const puedeAvanzar = {
-<<<<<<< Updated upstream
-    1: Boolean(fechaEntrada && fechaSalida && tarifa?.noches > 0),
-    2: !excedeCapacidad && !acompanantesIncompletos,
-=======
     1: Boolean(fechaEntrada && fechaSalida && tarifa?.noches > 0 && disponibilidad?.libre && !validandoDisponibilidad),
-    2: !excedeCapacidad && !acompanantesIncompletos && !rutsInvalidos && !rutsDuplicados,
->>>>>>> Stashed changes
+    2: !excedeCapacidad && !acompanantesIncompletos,
     3: true,
     4: true,
   }[paso]

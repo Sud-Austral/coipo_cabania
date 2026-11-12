@@ -219,17 +219,6 @@ export function registrarEstadia(codigo, tipo, { observaciones, actor } = {}) {
     }
   }
   if (observaciones) reserva.observaciones = observaciones
-<<<<<<< Updated upstream
-=======
-  reserva.registro_estadia ??= {}
-  reserva.registro_estadia[tipo] = { ...detalles, observaciones, fecha: tipo === 'check_in' ? reserva.check_in : reserva.check_out, por: actor?.nombre }
-  if (detalles.hay_incidencia) {
-    reserva.incidencia = { tipo: detalles.tipo_incidencia, descripcion: observaciones, evidencia: detalles.evidencia, recomendacion_bloqueo: detalles.recomendacion_bloqueo, estado: 'informada', creada_en: ahoraISO() }
-  }
-
-  // La anticipación se valida al crear la reserva. En check-in/check-out no se vuelve
-  // a aplicar esa regla porque la estadía ya existe y puede estar en curso o finalizada.
->>>>>>> Stashed changes
   persistir()
 
   registrarAuditoria({
@@ -286,8 +275,6 @@ export function anularReserva(codigo, { fuerzaMayor = false, actor } = {}) {
   return responder({ reserva, cobro })
 }
 
-<<<<<<< Updated upstream
-=======
 /** PATCH /api/reservas/{codigo}/fuerza-mayor — decisión de Oficina Central. */
 export function resolverFuerzaMayor(codigo, { aprobar, fundamento, actor } = {}) {
   const reserva = store.reservas.find((r) => r.codigo === codigo)
@@ -425,7 +412,6 @@ export function confirmarPagoTransferencia(codigo, actor) {
   })
 }
 
->>>>>>> Stashed changes
 /** GET /api/reservas/simular-tarifa — usada por el asistente de reserva. */
 export function simularTarifa({
   inmueble_id,
