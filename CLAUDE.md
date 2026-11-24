@@ -29,6 +29,8 @@ y los datos son ficticios. Publicada con un único contenedor nginx en `reserva-
 - La franja de «maqueta sin valor operativo» (`AvisoDemostracion.jsx`) y el banner institucional no se quitan sin decisión de Bienestar/UIA.
 - Pages gratuito ya no se usa: el repo debe seguir **privado**.
 
+**Fase 2 sin empezar en el repo:** no existen `backend/` ni `db/` (revisado el 2026-11-24). El README decía que estaban vacías; git no versiona carpetas vacías.
+
 **No tocar sin confirmar:** `deploy-prod.yml`, `deploy/*.conf`, `INSUMO/` e `INSUMO_PRODUCCION/` (copias de guías de la flota).
 
 Los **archivos e insumos** que Bienestar debe enviar antes de la reunión (tarifas,
