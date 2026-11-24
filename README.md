@@ -6,8 +6,8 @@ Bienestar de CONAF (34 inmuebles entre Antofagasta y Magallanes).
 
 Es **solo frontend** (React 19 + Vite, en `frontend/`): no hay backend ni base de datos, los
 datos son ficticios y el estado de la demostración vive en el `localStorage` del navegador
-(`frontend/src/api/store.js`). El backend FastAPI + PostgreSQL es la fase 2; `backend/` y `db/`
-están vacíos a la espera de eso.
+(`frontend/src/api/store.js`). El backend FastAPI + PostgreSQL es la fase 2; todavía no existen las carpetas
+`backend/` ni `db/` en el repositorio (comprobado el 2026-11-24).
 
 
 El alcance y las decisiones de esta fase están en [docs/ALCANCE.md](docs/ALCANCE.md); los
@@ -84,3 +84,7 @@ Se pueden apuntar a cualquier despliegue con `BASE=https://... node qa/...`.
 - El pipeline valida el despliegue con un único `curl` a `/health`, cinco segundos después de
   levantar y sin reintentos. Lo responde el nginx del contenedor
   ([frontend/nginx.conf](frontend/nginx.conf)), no un backend.
+
+## Estado de esta documentación
+
+Revisada el 2026-11-24 contra el árbol del repositorio: rutas citadas, puertos (`8114` en `.env.example` y `docker-compose.yml`, `8000` interno) y los cuatro scripts de `frontend/qa/`. No comprobado: `npm run lint`, `npm run build`, los scripts de QA ni el sitio publicado (no se instalaron dependencias ni se usó la red de CONAF).
