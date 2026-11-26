@@ -49,10 +49,11 @@ services:
       # estan healthy. `localhost` no esta roto por si mismo; lo que rompe es la
       # combinacion de las tres cosas de arriba.
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8000/health"]
-      interval: 30s
+      interval: 60s
       timeout: 3s
       retries: 3
-      start_period: 5s
+      start_period: 60s
+      start_interval: 5s  # R7: cada 5 s mientras arranca
     # R10: rotacion del log de Docker en todos los servicios (estandar de produccion, coipo_master_produccion, 2026-09-16)
     logging:
       driver: json-file
