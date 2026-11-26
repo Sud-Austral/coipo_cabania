@@ -11,3 +11,6 @@
 *.yml      text eol=lf
 Dockerfile text eol=lf
 .env.example text eol=lf
+
+# La base de la versión: LF siempre (patrones/version).
+VERSION text eol=lf
